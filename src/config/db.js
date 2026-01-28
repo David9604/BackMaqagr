@@ -12,6 +12,11 @@ export const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
-pool.connect()
-  .then(() => console.log('✅ Conectado a PostgreSQL'))
-  .catch(err => console.error('❌ Error de conexión a PostgreSQL:', err));
+// Test connection on first query instead of on load
+pool.on('connect', () => {
+  console.log('✅ Conectado a PostgreSQL');
+});
+
+pool.on('error', (err) => {
+  console.error('❌ Error inesperado en PostgreSQL:', err);
+});
