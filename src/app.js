@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { pool } from './config/db.js';
-import calculationRoutes from './routes/calculationRoutes.js';
+import calculationRoutes from './routes/calculation.routes.js';
 import tractorRoutes from './routes/tractor.routes.js';
 import authRoutes from './routes/auth.routes.js';
 
@@ -17,8 +17,8 @@ app.get('/', (req, res) => res.send('API de tractores funcionando 🚜'));
 // Rutas de autenticación
 app.use('/api/auth', authRoutes);
 
-// Rutas de cálculos de potencia
-app.use('/api', calculationRoutes);
+// Rutas de cálculos de potencia (semántica REST)
+app.use('/api/calculations', calculationRoutes);
 
 // Rutas de tractores
 app.use('/api/tractors', tractorRoutes);
