@@ -306,51 +306,84 @@ export const calculateMinimumPower = async (req, res) => {
           brand: tractor.brand,
           model: tractor.model,
           engine_power_hp: tractorHP,
-          traction_type: tractor.traction_type,
-          suitability: suitability,
-          surplus_hp: Math.round((tractorHP - requiredHP) * 100) / 100,
+          suitability,
         };
       });
 
-    // Ordenar por eficiencia (mayor utilización primero, luego por surplus)
-    classifiedTractors.sort((a, b) => {
-      // Primero ordenar por compatibilidad
-      if (a.suitability.isCompatible !== b.suitability.isCompatible) {
-        return a.suitability.isCompatible ? -1 : 1;
-      }
-      // Luego por score (OPTIMAL > OVERPOWERED > INSUFFICIENT)
-      const scoreOrder = { OPTIMAL: 0, OVERPOWERED: 1, INSUFFICIENT: 2 };
-      if (scoreOrder[a.suitability.score] !== scoreOrder[b.suitability.score]) {
-        return scoreOrder[a.suitability.score] - scoreOrder[b.suitability.score];
-      }
-      // Finalmente por surplus (menor es mejor)
-      return a.surplus_hp - b.surplus_hp;
-    });
-
-    // Separar en categorías
+    // Separar por categoría de idoneidad
     const optimalTractors = classifiedTractors.filter(t => t.suitability.score === 'OPTIMAL');
     const overpoweredTractors = classifiedTractors.filter(t => t.suitability.score === 'OVERPOWERED');
     const insufficientTractors = classifiedTractors.filter(t => t.suitability.score === 'INSUFFICIENT');
 
-    // Top 5 recomendados (priorizando óptimos)
-    const topRecommendations = classifiedTractors
-      .filter(t => t.suitability.isCompatible)
-      .slice(0, 5);
+    // Top 5 recomendaciones: priorizar OPTIMAL, luego OVERPOWERED por eficiencia
+    const topRecommendations = [
+      ...optimalTractors.sort((a, b) => b.suitability.utilizationPercent - a.suitability.utilizationPercent),
+      ...overpoweredTractors.sort((a, b) => b.suitability.utilizationPercent - a.suitability.utilizationPercent),
+    ].slice(0, 5).map((t, index) => ({ ...t, rank: index + 1 }));
 
     // 7. Persistencia Transaccional
     await client.query('BEGIN');
 
-    // A. Insertar registro en tabla 'query'
+    // A. Insertar en query - SIN tractor_id (usar columna que permita NULL o valor por defecto)
+    // Opción: Usar el primer tractor recomendado como referencia, o modificar esquema
+    const recommendedTractorId = topRecommendations.length > 0 
+      ? topRecommendations[0].tractor_id 
+      : null;
+
+    // Si la BD requiere tractor_id NOT NULL, usamos el mejor recomendado
+    // Si no hay tractores compatibles, no podemos insertar (o usar un valor sentinel)
+    if (!recommendedTractorId) {
+      // No hay tractores compatibles - aún así devolvemos resultado sin persistir
+      await client.query('ROLLBACK');
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Cálculo de potencia mínima realizado (sin tractores compatibles)',
+        data: {
+          queryId: null, // No se persistió
+          implement: {
+            id: implement.implement_id,
+            name: implement.implement_name,
+            brand: implement.brand,
+            type: implement.implement_type,
+            power_requirement_hp: implement.power_requirement_hp,
+          },
+          terrain: {
+            id: terrain.terrain_id,
+            name: terrain.name,
+            soil_type: terrain.soil_type,
+            slope_percentage: terrain.slope_percentage,
+          },
+          powerRequirement: {
+            minimum_power_hp: powerResult.minimumPowerHP,
+            calculated_power_hp: powerResult.calculatedPowerHP,
+            factors: powerResult.factors,
+          },
+          tractorAnalysis: {
+            total_evaluated: allTractors.length,
+            summary: {
+              optimal: 0,
+              overpowered: 0,
+              insufficient: insufficientTractors.length,
+            },
+          },
+          recommendations: {
+            top_5: [],
+            best_match: null,
+          },
+        },
+      });
+    }
+
     const insertQuerySql = `
       INSERT INTO query (
-        user_id, terrain_id, tractor_id, implement_id,
-        query_type, status
+        user_id, terrain_id, tractor_id, implement_id, query_type, status
       )
-      VALUES ($1, $2, NULL, $3, 'minimum_power', 'completed')
+      VALUES ($1, $2, $3, $4, 'minimum_power', 'completed')
       RETURNING query_id
     `;
     const queryResult = await client.query(insertQuerySql, [
-      user_id, terrain_id, implement_id
+      user_id, terrain_id, recommendedTractorId, implement_id
     ]);
     const queryId = queryResult.rows[0].query_id;
 
