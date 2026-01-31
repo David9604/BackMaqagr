@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { pool } from './config/db.js';
 import tractorRoutes from './routes/tractor.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import roleRoutes from './routes/role.routes.js';
 
 dotenv.config();
 const app = express();
@@ -12,6 +13,9 @@ app.use(express.json());
 
 // Rutas de autenticación
 app.use('/api/auth', authRoutes);
+
+// Rutas de roles
+app.use('/api/roles', roleRoutes);
 
 app.get('/', (req, res) => res.send('API de tractores funcionando 🚜'));
 
