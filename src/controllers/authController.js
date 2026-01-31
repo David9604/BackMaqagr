@@ -410,3 +410,4 @@ export const changePassword = async (req, res) => {
 };
 
 export default { register, login, logout, getProfile, updateProfile, changePassword };
+

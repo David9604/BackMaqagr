@@ -39,4 +39,3 @@ router.put('/profile', verifyTokenMiddleware, updateProfile);
 router.put('/password', verifyTokenMiddleware, changePassword);
 
 export default router;
-
