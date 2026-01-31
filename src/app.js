@@ -5,6 +5,7 @@ import { pool } from './config/db.js';
 import calculationRoutes from './routes/calculation.routes.js';
 import tractorRoutes from './routes/tractor.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import roleRoutes from './routes/role.routes.js';
 
 dotenv.config();
 const app = express();
@@ -19,6 +20,10 @@ app.use('/api/auth', authRoutes);
 
 // Rutas de cálculos de potencia (semántica REST)
 app.use('/api/calculations', calculationRoutes);
+// Rutas de roles
+app.use('/api/roles', roleRoutes);
+
+app.get('/', (req, res) => res.send('API de tractores funcionando 🚜'));
 
 // Rutas de tractores
 app.use('/api/tractors', tractorRoutes);
