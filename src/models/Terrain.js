@@ -1,42 +1,69 @@
-import { pool } from '../config/db.js';
+import { pool } from "../config/db.js";
 
 class Terrain {
-  // Get all terrains
+  // Get all terrains (admin use - shows all)
   static async getAll() {
-    const query = 'SELECT * FROM terrain ORDER BY name';
+    const query = "SELECT * FROM terrain ORDER BY name";
     const result = await pool.query(query);
+    return result.rows;
+  }
+
+  // Get terrains by user ID (for authenticated users)
+  static async findByUserId(userId) {
+    const query = `
+      SELECT * FROM terrain 
+      WHERE user_id = $1 
+      ORDER BY name
+    `;
+    const result = await pool.query(query, [userId]);
     return result.rows;
   }
 
   // Find terrain by ID
   static async findById(id) {
-    const query = 'SELECT * FROM terrain WHERE terrain_id = $1';
+    const query = "SELECT * FROM terrain WHERE terrain_id = $1";
     const result = await pool.query(query, [id]);
     return result.rows[0];
   }
 
-  // Create new terrain
+  // Find terrain by ID and User ID (ownership verification)
+  static async findByIdAndUser(id, userId) {
+    const query = `
+      SELECT * FROM terrain 
+      WHERE terrain_id = $1 AND user_id = $2
+    `;
+    const result = await pool.query(query, [id, userId]);
+    return result.rows[0];
+  }
+
+  // Create new terrain (with user_id)
   static async create(terrainData) {
     const {
+      user_id,
       name,
       altitude_meters,
       slope_percentage,
       soil_type,
       temperature_celsius,
-      status = 'active'
+      status = "active",
     } = terrainData;
 
     const query = `
       INSERT INTO terrain (
-        name, altitude_meters, slope_percentage, soil_type,
+        user_id, name, altitude_meters, slope_percentage, soil_type,
         temperature_celsius, status
       )
-      VALUES ($1, $2, $3, $4, $5, $6)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
     const values = [
-      name, altitude_meters, slope_percentage, soil_type,
-      temperature_celsius, status
+      user_id,
+      name,
+      altitude_meters,
+      slope_percentage,
+      soil_type,
+      temperature_celsius,
+      status,
     ];
     const result = await pool.query(query, values);
     return result.rows[0];
@@ -50,7 +77,7 @@ class Terrain {
       slope_percentage,
       soil_type,
       temperature_celsius,
-      status
+      status,
     } = terrainData;
 
     const query = `
@@ -65,8 +92,13 @@ class Terrain {
       RETURNING *
     `;
     const values = [
-      name, altitude_meters, slope_percentage, soil_type,
-      temperature_celsius, status, id
+      name,
+      altitude_meters,
+      slope_percentage,
+      soil_type,
+      temperature_celsius,
+      status,
+      id,
     ];
     const result = await pool.query(query, values);
     return result.rows[0];
@@ -74,7 +106,7 @@ class Terrain {
 
   // Delete terrain
   static async delete(id) {
-    const query = 'DELETE FROM terrain WHERE terrain_id = $1 RETURNING *';
+    const query = "DELETE FROM terrain WHERE terrain_id = $1 RETURNING *";
     const result = await pool.query(query, [id]);
     return result.rows[0];
   }
