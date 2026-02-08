@@ -4,6 +4,7 @@ import Terrain from '../models/Terrain.js';
 import Implement from '../models/Implement.js';
 import { calculateTotalLoss } from '../services/powerLossService.js';
 import { calculateMinimumPower as calcMinPower } from '../services/minimumPowerService.js';
+import { asyncHandler } from '../middleware/error.middleware.js';
 
 /**
  * Mapea tipo de suelo a Índice de Cono (Cn) según ASABE D497.7
@@ -20,11 +21,9 @@ const getSoilCn = (soil) => {
  * Maneja orquestación DB, cálculo lógico y persistencia transaccional
  * @route POST /calculate-power
  */
-export const calculatePowerLoss = async (req, res) => {
+export const calculatePowerLoss = asyncHandler(async (req, res) => {
   // Cliente de conexión para transacción
   const client = await pool.connect();
-  
-  try {
     // 1. Extracción de inputs
     const { 
       tractor_id, 
@@ -158,23 +157,11 @@ export const calculatePowerLoss = async (req, res) => {
         efficiency_percentage: results.efficiency
       }
     });
-
-  } catch (error) {
-    // Rollback en caso de error
-    await client.query('ROLLBACK');
-    console.error('Error en calculatePowerLoss:', error);
-    
-    // Manejo de errores 500
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error procesando la solicitud de cálculo',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
   } finally {
     // Liberar cliente al pool
     client.release();
   }
-};
+});
 
 /**
  * Constantes para clasificación de tractores por eficiencia

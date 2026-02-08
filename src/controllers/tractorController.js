@@ -1,4 +1,5 @@
 import Tractor from '../models/Tractor.js';
+import { asyncHandler } from '../middleware/error.middleware.js';
 
 // Helpers de paginación
 const getPaginationParams = (req) => {
@@ -20,330 +21,274 @@ const applyPagination = (items, { limit, offset }) => {
   return { data, total, limit, offset };
 };
 
-export const getAllTractors = async (req, res) => {
-  try {
-    const tractors = await Tractor.getAll();
-    const { limit, offset } = getPaginationParams(req);
-    const { data, total } = applyPagination(tractors, { limit, offset });
+export const getAllTractors = asyncHandler(async (req, res) => {
+  const tractors = await Tractor.getAll();
+  const { limit, offset } = getPaginationParams(req);
+  const { data, total } = applyPagination(tractors, { limit, offset });
 
-    return res.json({
-      success: true,
-      data,
-      pagination: {
-        total,
-        limit,
-        offset,
-      },
-    });
-  } catch (error) {
-    console.error('Error in getAllTractors:', error);
-    return res.status(500).json({
+  return res.json({
+    success: true,
+    data,
+    pagination: {
+      total,
+      limit,
+      offset,
+    },
+  });
+});
+
+export const getTractorById = asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+
+  if (Number.isNaN(id) || id <= 0) {
+    return res.status(400).json({
       success: false,
-      message: 'Error al obtener la lista de tractores',
+      message: 'ID de tractor inválido',
     });
   }
-};
 
-export const getTractorById = async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
+  const tractor = await Tractor.findById(id);
 
-    if (Number.isNaN(id) || id <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID de tractor inválido',
-      });
-    }
-
-    const tractor = await Tractor.findById(id);
-
-    if (!tractor) {
-      return res.status(404).json({
-        success: false,
-        message: 'Tractor no encontrado',
-      });
-    }
-
-    return res.json({
-      success: true,
-      data: tractor,
-    });
-  } catch (error) {
-    console.error('Error in getTractorById:', error);
-    return res.status(500).json({
+  if (!tractor) {
+    return res.status(404).json({
       success: false,
-      message: 'Error al obtener el tractor',
+      message: 'Tractor no encontrado',
     });
   }
-};
 
-export const searchTractors = async (req, res) => {
-  try {
-    const { brand, model, minPower, maxPower } = req.query;
+  return res.json({
+    success: true,
+    data: tractor,
+  });
+});
 
-    // Usamos el modelo Tractor para obtener todos y filtramos en memoria
-    const tractors = await Tractor.getAll();
+export const searchTractors = asyncHandler(async (req, res) => {
+  const { brand, model, minPower, maxPower } = req.query;
 
-    let filtered = tractors;
+  // Usamos el modelo Tractor para obtener todos y filtramos en memoria
+  const tractors = await Tractor.getAll();
 
-    if (brand) {
-      const brandLower = brand.toLowerCase();
-      filtered = filtered.filter((t) =>
-        t.brand && t.brand.toLowerCase().includes(brandLower),
-      );
-    }
+  let filtered = tractors;
 
-    if (model) {
-      const modelLower = model.toLowerCase();
-      filtered = filtered.filter((t) =>
-        t.model && t.model.toLowerCase().includes(modelLower),
-      );
-    }
+  if (brand) {
+    const brandLower = brand.toLowerCase();
+    filtered = filtered.filter((t) =>
+      t.brand && t.brand.toLowerCase().includes(brandLower),
+    );
+  }
 
-    const minPowerNum = minPower ? parseFloat(minPower) : null;
-    const maxPowerNum = maxPower ? parseFloat(maxPower) : null;
+  if (model) {
+    const modelLower = model.toLowerCase();
+    filtered = filtered.filter((t) =>
+      t.model && t.model.toLowerCase().includes(modelLower),
+    );
+  }
 
-    if (minPowerNum !== null && !Number.isNaN(minPowerNum)) {
-      filtered = filtered.filter((t) => t.engine_power_hp >= minPowerNum);
-    }
+  const minPowerNum = minPower ? parseFloat(minPower) : null;
+  const maxPowerNum = maxPower ? parseFloat(maxPower) : null;
 
-    if (maxPowerNum !== null && !Number.isNaN(maxPowerNum)) {
-      filtered = filtered.filter((t) => t.engine_power_hp <= maxPowerNum);
-    }
+  if (minPowerNum !== null && !Number.isNaN(minPowerNum)) {
+    filtered = filtered.filter((t) => t.engine_power_hp >= minPowerNum);
+  }
 
-    const { limit, offset } = getPaginationParams(req);
-    const { data, total } = applyPagination(filtered, { limit, offset });
+  if (maxPowerNum !== null && !Number.isNaN(maxPowerNum)) {
+    filtered = filtered.filter((t) => t.engine_power_hp <= maxPowerNum);
+  }
 
-    return res.json({
-      success: true,
-      data,
-      pagination: {
-        total,
-        limit,
-        offset,
-      },
-      filters: {
-        brand: brand || null,
-        model: model || null,
-        minPower: minPowerNum,
-        maxPower: maxPowerNum,
-      },
-    });
-  } catch (error) {
-    console.error('Error in searchTractors:', error);
-    return res.status(500).json({
+  const { limit, offset } = getPaginationParams(req);
+  const { data, total } = applyPagination(filtered, { limit, offset });
+
+  return res.json({
+    success: true,
+    data,
+    pagination: {
+      total,
+      limit,
+      offset,
+    },
+    filters: {
+      brand: brand || null,
+      model: model || null,
+      minPower: minPowerNum,
+      maxPower: maxPowerNum,
+    },
+  });
+});
+
+export const getAvailableTractors = asyncHandler(async (req, res) => {
+  const tractors = await Tractor.getAvailable();
+  const { limit, offset } = getPaginationParams(req);
+  const { data, total } = applyPagination(tractors, { limit, offset });
+
+  return res.json({
+    success: true,
+    data,
+    pagination: {
+      total,
+      limit,
+      offset,
+    },
+  });
+});
+
+export const createTractor = asyncHandler(async (req, res) => {
+  const {
+    name,
+    brand,
+    model,
+    engine_power_hp,
+    weight_kg,
+    traction_force_kn,
+    traction_type,
+    tire_type,
+    tire_width_mm,
+    tire_diameter_mm,
+    tire_pressure_psi,
+    status,
+  } = req.body || {};
+
+  const payload = {
+    name,
+    brand,
+    model,
+    engine_power_hp:
+      engine_power_hp !== undefined && engine_power_hp !== null
+        ? Number(engine_power_hp)
+        : undefined,
+    weight_kg:
+      weight_kg !== undefined && weight_kg !== null
+        ? Number(weight_kg)
+        : undefined,
+    traction_force_kn:
+      traction_force_kn !== undefined && traction_force_kn !== null
+        ? Number(traction_force_kn)
+        : undefined,
+    traction_type,
+    tire_type,
+    tire_width_mm:
+      tire_width_mm !== undefined && tire_width_mm !== null
+        ? Number(tire_width_mm)
+        : undefined,
+    tire_diameter_mm:
+      tire_diameter_mm !== undefined && tire_diameter_mm !== null
+        ? Number(tire_diameter_mm)
+        : undefined,
+    tire_pressure_psi:
+      tire_pressure_psi !== undefined && tire_pressure_psi !== null
+        ? Number(tire_pressure_psi)
+        : undefined,
+    status,
+  };
+
+  const newTractor = await Tractor.create(payload);
+
+  return res.status(201).json({
+    success: true,
+    data: newTractor,
+  });
+});
+
+export const updateTractor = asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+
+  if (Number.isNaN(id) || id <= 0) {
+    return res.status(400).json({
       success: false,
-      message: 'Error al buscar tractores',
+      message: 'ID de tractor inválido',
     });
   }
-};
 
-export const getAvailableTractors = async (req, res) => {
-  try {
-    const tractors = await Tractor.getAvailable();
-    const { limit, offset } = getPaginationParams(req);
-    const { data, total } = applyPagination(tractors, { limit, offset });
+  const existing = await Tractor.findById(id);
 
-    return res.json({
-      success: true,
-      data,
-      pagination: {
-        total,
-        limit,
-        offset,
-      },
-    });
-  } catch (error) {
-    console.error('Error in getAvailableTractors:', error);
-    return res.status(500).json({
+  if (!existing) {
+    return res.status(404).json({
       success: false,
-      message: 'Error al obtener tractores disponibles',
+      message: 'Tractor no encontrado',
     });
   }
-};
 
-export const createTractor = async (req, res) => {
-  try {
-    const {
-      name,
-      brand,
-      model,
-      engine_power_hp,
-      weight_kg,
-      traction_force_kn,
-      traction_type,
-      tire_type,
-      tire_width_mm,
-      tire_diameter_mm,
-      tire_pressure_psi,
-      status,
-    } = req.body || {};
+  const {
+    name,
+    brand,
+    model,
+    engine_power_hp,
+    weight_kg,
+    traction_force_kn,
+    traction_type,
+    tire_type,
+    tire_width_mm,
+    tire_diameter_mm,
+    tire_pressure_psi,
+    status,
+  } = req.body || {};
 
-    const payload = {
-      name,
-      brand,
-      model,
-      engine_power_hp:
-        engine_power_hp !== undefined && engine_power_hp !== null
-          ? Number(engine_power_hp)
-          : undefined,
-      weight_kg:
-        weight_kg !== undefined && weight_kg !== null
-          ? Number(weight_kg)
-          : undefined,
-      traction_force_kn:
-        traction_force_kn !== undefined && traction_force_kn !== null
-          ? Number(traction_force_kn)
-          : undefined,
-      traction_type,
-      tire_type,
-      tire_width_mm:
-        tire_width_mm !== undefined && tire_width_mm !== null
-          ? Number(tire_width_mm)
-          : undefined,
-      tire_diameter_mm:
-        tire_diameter_mm !== undefined && tire_diameter_mm !== null
-          ? Number(tire_diameter_mm)
-          : undefined,
-      tire_pressure_psi:
-        tire_pressure_psi !== undefined && tire_pressure_psi !== null
-          ? Number(tire_pressure_psi)
-          : undefined,
-      status,
-    };
+  const updateData = {
+    name,
+    brand,
+    model,
+    engine_power_hp:
+      engine_power_hp !== undefined && engine_power_hp !== null
+        ? Number(engine_power_hp)
+        : undefined,
+    weight_kg:
+      weight_kg !== undefined && weight_kg !== null
+        ? Number(weight_kg)
+        : undefined,
+    traction_force_kn:
+      traction_force_kn !== undefined && traction_force_kn !== null
+        ? Number(traction_force_kn)
+        : undefined,
+    traction_type,
+    tire_type,
+    tire_width_mm:
+      tire_width_mm !== undefined && tire_width_mm !== null
+        ? Number(tire_width_mm)
+        : undefined,
+    tire_diameter_mm:
+      tire_diameter_mm !== undefined && tire_diameter_mm !== null
+        ? Number(tire_diameter_mm)
+        : undefined,
+    tire_pressure_psi:
+      tire_pressure_psi !== undefined && tire_pressure_psi !== null
+        ? Number(tire_pressure_psi)
+        : undefined,
+    status,
+  };
 
-    const newTractor = await Tractor.create(payload);
+  const updated = await Tractor.update(id, updateData);
 
-    return res.status(201).json({
-      success: true,
-      data: newTractor,
-    });
-  } catch (error) {
-    console.error('Error in createTractor:', error);
-    return res.status(500).json({
+  return res.json({
+    success: true,
+    data: updated,
+  });
+});
+
+export const deleteTractor = asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+
+  if (Number.isNaN(id) || id <= 0) {
+    return res.status(400).json({
       success: false,
-      message: 'Error al crear el tractor',
+      message: 'ID de tractor inválido',
     });
   }
-};
 
-export const updateTractor = async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
+  const existing = await Tractor.findById(id);
 
-    if (Number.isNaN(id) || id <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID de tractor inválido',
-      });
-    }
-
-    const existing = await Tractor.findById(id);
-
-    if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: 'Tractor no encontrado',
-      });
-    }
-
-    const {
-      name,
-      brand,
-      model,
-      engine_power_hp,
-      weight_kg,
-      traction_force_kn,
-      traction_type,
-      tire_type,
-      tire_width_mm,
-      tire_diameter_mm,
-      tire_pressure_psi,
-      status,
-    } = req.body || {};
-
-    const updateData = {
-      name,
-      brand,
-      model,
-      engine_power_hp:
-        engine_power_hp !== undefined && engine_power_hp !== null
-          ? Number(engine_power_hp)
-          : undefined,
-      weight_kg:
-        weight_kg !== undefined && weight_kg !== null
-          ? Number(weight_kg)
-          : undefined,
-      traction_force_kn:
-        traction_force_kn !== undefined && traction_force_kn !== null
-          ? Number(traction_force_kn)
-          : undefined,
-      traction_type,
-      tire_type,
-      tire_width_mm:
-        tire_width_mm !== undefined && tire_width_mm !== null
-          ? Number(tire_width_mm)
-          : undefined,
-      tire_diameter_mm:
-        tire_diameter_mm !== undefined && tire_diameter_mm !== null
-          ? Number(tire_diameter_mm)
-          : undefined,
-      tire_pressure_psi:
-        tire_pressure_psi !== undefined && tire_pressure_psi !== null
-          ? Number(tire_pressure_psi)
-          : undefined,
-      status,
-    };
-
-    const updated = await Tractor.update(id, updateData);
-
-    return res.json({
-      success: true,
-      data: updated,
-    });
-  } catch (error) {
-    console.error('Error in updateTractor:', error);
-    return res.status(500).json({
+  if (!existing) {
+    return res.status(404).json({
       success: false,
-      message: 'Error al actualizar el tractor',
+      message: 'Tractor no encontrado',
     });
   }
-};
 
-export const deleteTractor = async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
+  const updated = await Tractor.update(id, { status: 'inactive' });
 
-    if (Number.isNaN(id) || id <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'ID de tractor inválido',
-      });
-    }
-
-    const existing = await Tractor.findById(id);
-
-    if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: 'Tractor no encontrado',
-      });
-    }
-
-    const updated = await Tractor.update(id, { status: 'inactive' });
-
-    return res.json({
-      success: true,
-      data: updated,
-    });
-  } catch (error) {
-    console.error('Error in deleteTractor:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al eliminar el tractor',
-    });
-  }
-};
+  return res.json({
+    success: true,
+    data: updated,
+  });
+});
 
 export default {
   getAllTractors,
