@@ -162,9 +162,195 @@ export const getAvailableTractors = async (req, res) => {
   }
 };
 
+export const createTractor = async (req, res) => {
+  try {
+    const {
+      name,
+      brand,
+      model,
+      engine_power_hp,
+      weight_kg,
+      traction_force_kn,
+      traction_type,
+      tire_type,
+      tire_width_mm,
+      tire_diameter_mm,
+      tire_pressure_psi,
+      status,
+    } = req.body || {};
+
+    const payload = {
+      name,
+      brand,
+      model,
+      engine_power_hp:
+        engine_power_hp !== undefined && engine_power_hp !== null
+          ? Number(engine_power_hp)
+          : undefined,
+      weight_kg:
+        weight_kg !== undefined && weight_kg !== null
+          ? Number(weight_kg)
+          : undefined,
+      traction_force_kn:
+        traction_force_kn !== undefined && traction_force_kn !== null
+          ? Number(traction_force_kn)
+          : undefined,
+      traction_type,
+      tire_type,
+      tire_width_mm:
+        tire_width_mm !== undefined && tire_width_mm !== null
+          ? Number(tire_width_mm)
+          : undefined,
+      tire_diameter_mm:
+        tire_diameter_mm !== undefined && tire_diameter_mm !== null
+          ? Number(tire_diameter_mm)
+          : undefined,
+      tire_pressure_psi:
+        tire_pressure_psi !== undefined && tire_pressure_psi !== null
+          ? Number(tire_pressure_psi)
+          : undefined,
+      status,
+    };
+
+    const newTractor = await Tractor.create(payload);
+
+    return res.status(201).json({
+      success: true,
+      data: newTractor,
+    });
+  } catch (error) {
+    console.error('Error in createTractor:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al crear el tractor',
+    });
+  }
+};
+
+export const updateTractor = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+
+    if (Number.isNaN(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de tractor inválido',
+      });
+    }
+
+    const existing = await Tractor.findById(id);
+
+    if (!existing) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tractor no encontrado',
+      });
+    }
+
+    const {
+      name,
+      brand,
+      model,
+      engine_power_hp,
+      weight_kg,
+      traction_force_kn,
+      traction_type,
+      tire_type,
+      tire_width_mm,
+      tire_diameter_mm,
+      tire_pressure_psi,
+      status,
+    } = req.body || {};
+
+    const updateData = {
+      name,
+      brand,
+      model,
+      engine_power_hp:
+        engine_power_hp !== undefined && engine_power_hp !== null
+          ? Number(engine_power_hp)
+          : undefined,
+      weight_kg:
+        weight_kg !== undefined && weight_kg !== null
+          ? Number(weight_kg)
+          : undefined,
+      traction_force_kn:
+        traction_force_kn !== undefined && traction_force_kn !== null
+          ? Number(traction_force_kn)
+          : undefined,
+      traction_type,
+      tire_type,
+      tire_width_mm:
+        tire_width_mm !== undefined && tire_width_mm !== null
+          ? Number(tire_width_mm)
+          : undefined,
+      tire_diameter_mm:
+        tire_diameter_mm !== undefined && tire_diameter_mm !== null
+          ? Number(tire_diameter_mm)
+          : undefined,
+      tire_pressure_psi:
+        tire_pressure_psi !== undefined && tire_pressure_psi !== null
+          ? Number(tire_pressure_psi)
+          : undefined,
+      status,
+    };
+
+    const updated = await Tractor.update(id, updateData);
+
+    return res.json({
+      success: true,
+      data: updated,
+    });
+  } catch (error) {
+    console.error('Error in updateTractor:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al actualizar el tractor',
+    });
+  }
+};
+
+export const deleteTractor = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+
+    if (Number.isNaN(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de tractor inválido',
+      });
+    }
+
+    const existing = await Tractor.findById(id);
+
+    if (!existing) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tractor no encontrado',
+      });
+    }
+
+    const updated = await Tractor.update(id, { status: 'inactive' });
+
+    return res.json({
+      success: true,
+      data: updated,
+    });
+  } catch (error) {
+    console.error('Error in deleteTractor:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al eliminar el tractor',
+    });
+  }
+};
+
 export default {
   getAllTractors,
   getTractorById,
   searchTractors,
   getAvailableTractors,
+  createTractor,
+  updateTractor,
+  deleteTractor,
 };
