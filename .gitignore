@@ -30,6 +30,18 @@ yarn-debug.log*
 yarn-error.log*
 .yarn/*
 
+# Documentation
+/docs/site/
+/docs/out/
+/documentation/out/
+/out/
+/.context/
+*.pdf
+*.docx
+*.doc
+*.pptx
+*.xlsx
+
 # Runtime data
 pids/
 *.pid
@@ -41,6 +53,15 @@ testing/
 coverage/
 .nyc_output/
 
+# Postman
+postman/experimental/
+postman-reports/
+newman/
+*.postman_collection.json
+*.postman_environment.json
+*.postman_globals.json
+postman-cloud-agent.log
+
 # Build output
 dist/
 build/
@@ -51,6 +72,8 @@ build/
 *.sqlite
 *.sqlite3
 database/backups/
+migrations/*
+migrations/
 
 # OS files
 .DS_Store
