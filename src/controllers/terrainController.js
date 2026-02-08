@@ -1,4 +1,5 @@
 import Terrain from "../models/Terrain.js";
+import { asyncHandler } from '../middleware/error.middleware.js';
 
 // Helpers de paginación
 const getPaginationParams = (req) => {
@@ -28,248 +29,208 @@ const applyPagination = (items, { limit, offset }) => {
  * Obtener todos los terrenos del usuario autenticado
  * GET /api/terrains
  */
-export const getAllTerrains = async (req, res) => {
-  try {
-    const userId = req.user.user_id;
-    const terrains = await Terrain.findByUserId(userId);
-    const { limit, offset } = getPaginationParams(req);
-    const { data, total } = applyPagination(terrains, { limit, offset });
+export const getAllTerrains = asyncHandler(async (req, res) => {
+  const userId = req.user.user_id;
+  const terrains = await Terrain.findByUserId(userId);
+  const { limit, offset } = getPaginationParams(req);
+  const { data, total } = applyPagination(terrains, { limit, offset });
 
-    return res.json({
-      success: true,
-      data,
-      pagination: {
-        total,
-        limit,
-        offset,
-      },
-    });
-  } catch (error) {
-    console.error("Error in getAllTerrains:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Error al obtener la lista de terrenos",
-    });
-  }
-};
+  return res.json({
+    success: true,
+    data,
+    pagination: {
+      total,
+      limit,
+      offset,
+    },
+  });
+});
 
 /**
  * Obtener un terreno por ID (solo si pertenece al usuario)
  * GET /api/terrains/:id
  */
-export const getTerrainById = async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    const userId = req.user.user_id;
+export const getTerrainById = asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const userId = req.user.user_id;
 
-    if (Number.isNaN(id) || id <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "ID de terreno inválido",
-      });
-    }
-
-    // Verificar propiedad del terreno
-    const terrain = await Terrain.findByIdAndUser(id, userId);
-
-    if (!terrain) {
-      return res.status(404).json({
-        success: false,
-        message: "Terreno no encontrado",
-      });
-    }
-
-    return res.json({
-      success: true,
-      data: terrain,
-    });
-  } catch (error) {
-    console.error("Error in getTerrainById:", error);
-    return res.status(500).json({
+  if (Number.isNaN(id) || id <= 0) {
+    return res.status(400).json({
       success: false,
-      message: "Error al obtener el terreno",
+      message: "ID de terreno inválido",
     });
   }
-};
+
+  // Verificar propiedad del terreno
+  const terrain = await Terrain.findByIdAndUser(id, userId);
+
+  if (!terrain) {
+    return res.status(404).json({
+      success: false,
+      message: "Terreno no encontrado",
+    });
+  }
+
+  return res.json({
+    success: true,
+    data: terrain,
+  });
+});
 
 /**
  * Crear un nuevo terreno asociado al usuario autenticado
  * POST /api/terrains
  */
-export const createTerrain = async (req, res) => {
-  try {
-    const userId = req.user.user_id;
-    const {
-      name,
-      altitude_meters,
-      slope_percentage,
-      soil_type,
-      temperature_celsius,
-      status,
-    } = req.body || {};
+export const createTerrain = asyncHandler(async (req, res) => {
+  const userId = req.user.user_id;
+  const {
+    name,
+    altitude_meters,
+    slope_percentage,
+    soil_type,
+    temperature_celsius,
+    status,
+  } = req.body || {};
 
-    // Validaciones básicas
-    const errors = [];
-    if (!name || typeof name !== "string" || !name.trim()) {
-      errors.push("name es requerido");
-    }
-    if (altitude_meters === undefined || altitude_meters === null) {
-      errors.push("altitude_meters es requerido");
-    }
-    if (slope_percentage === undefined || slope_percentage === null) {
-      errors.push("slope_percentage es requerido");
-    }
-    if (!soil_type || typeof soil_type !== "string" || !soil_type.trim()) {
-      errors.push("soil_type es requerido");
-    }
+  // Validaciones básicas
+  const errors = [];
+  if (!name || typeof name !== "string" || !name.trim()) {
+    errors.push("name es requerido");
+  }
+  if (altitude_meters === undefined || altitude_meters === null) {
+    errors.push("altitude_meters es requerido");
+  }
+  if (slope_percentage === undefined || slope_percentage === null) {
+    errors.push("slope_percentage es requerido");
+  }
+  if (!soil_type || typeof soil_type !== "string" || !soil_type.trim()) {
+    errors.push("soil_type es requerido");
+  }
 
-    if (errors.length > 0) {
-      return res.status(400).json({
-        success: false,
-        errors,
-      });
-    }
-
-    const payload = {
-      user_id: userId,
-      name,
-      altitude_meters: Number(altitude_meters),
-      slope_percentage: Number(slope_percentage),
-      soil_type,
-      temperature_celsius:
-        temperature_celsius !== undefined && temperature_celsius !== null
-          ? Number(temperature_celsius)
-          : null,
-      status,
-    };
-
-    const newTerrain = await Terrain.create(payload);
-
-    return res.status(201).json({
-      success: true,
-      message: "Terreno creado exitosamente",
-      data: newTerrain,
-    });
-  } catch (error) {
-    console.error("Error in createTerrain:", error);
-    return res.status(500).json({
+  if (errors.length > 0) {
+    return res.status(400).json({
       success: false,
-      message: "Error al crear el terreno",
+      errors,
     });
   }
-};
+
+  const payload = {
+    user_id: userId,
+    name,
+    altitude_meters: Number(altitude_meters),
+    slope_percentage: Number(slope_percentage),
+    soil_type,
+    temperature_celsius:
+      temperature_celsius !== undefined && temperature_celsius !== null
+        ? Number(temperature_celsius)
+        : null,
+    status,
+  };
+
+  const newTerrain = await Terrain.create(payload);
+
+  return res.status(201).json({
+    success: true,
+    message: "Terreno creado exitosamente",
+    data: newTerrain,
+  });
+});
 
 /**
  * Actualizar un terreno (solo si pertenece al usuario)
  * PUT /api/terrains/:id
  */
-export const updateTerrain = async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    const userId = req.user.user_id;
+export const updateTerrain = asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const userId = req.user.user_id;
 
-    if (Number.isNaN(id) || id <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "ID de terreno inválido",
-      });
-    }
-
-    // Verificar propiedad del terreno
-    const existing = await Terrain.findByIdAndUser(id, userId);
-
-    if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: "Terreno no encontrado",
-      });
-    }
-
-    const {
-      name,
-      altitude_meters,
-      slope_percentage,
-      soil_type,
-      temperature_celsius,
-      status,
-    } = req.body || {};
-
-    const updateData = {
-      name,
-      altitude_meters:
-        altitude_meters !== undefined && altitude_meters !== null
-          ? Number(altitude_meters)
-          : undefined,
-      slope_percentage:
-        slope_percentage !== undefined && slope_percentage !== null
-          ? Number(slope_percentage)
-          : undefined,
-      soil_type,
-      temperature_celsius:
-        temperature_celsius !== undefined && temperature_celsius !== null
-          ? Number(temperature_celsius)
-          : undefined,
-      status,
-    };
-
-    const updated = await Terrain.update(id, updateData);
-
-    return res.json({
-      success: true,
-      message: "Terreno actualizado exitosamente",
-      data: updated,
-    });
-  } catch (error) {
-    console.error("Error in updateTerrain:", error);
-    return res.status(500).json({
+  if (Number.isNaN(id) || id <= 0) {
+    return res.status(400).json({
       success: false,
-      message: "Error al actualizar el terreno",
+      message: "ID de terreno inválido",
     });
   }
-};
+
+  // Verificar propiedad del terreno
+  const existing = await Terrain.findByIdAndUser(id, userId);
+
+  if (!existing) {
+    return res.status(404).json({
+      success: false,
+      message: "Terreno no encontrado",
+    });
+  }
+
+  const {
+    name,
+    altitude_meters,
+    slope_percentage,
+    soil_type,
+    temperature_celsius,
+    status,
+  } = req.body || {};
+
+  const updateData = {
+    name,
+    altitude_meters:
+      altitude_meters !== undefined && altitude_meters !== null
+        ? Number(altitude_meters)
+        : undefined,
+    slope_percentage:
+      slope_percentage !== undefined && slope_percentage !== null
+        ? Number(slope_percentage)
+        : undefined,
+    soil_type,
+    temperature_celsius:
+      temperature_celsius !== undefined && temperature_celsius !== null
+        ? Number(temperature_celsius)
+        : undefined,
+    status,
+  };
+
+  const updated = await Terrain.update(id, updateData);
+
+  return res.json({
+    success: true,
+    message: "Terreno actualizado exitosamente",
+    data: updated,
+  });
+});
 
 /**
  * Eliminar un terreno (solo si pertenece al usuario)
  * DELETE /api/terrains/:id
  */
-export const deleteTerrain = async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    const userId = req.user.user_id;
+export const deleteTerrain = asyncHandler(async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const userId = req.user.user_id;
 
-    if (Number.isNaN(id) || id <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "ID de terreno inválido",
-      });
-    }
-
-    // Verificar propiedad del terreno
-    const existing = await Terrain.findByIdAndUser(id, userId);
-
-    if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: "Terreno no encontrado",
-      });
-    }
-
-    // Eliminación real (no soft delete como en tractores/implementos)
-    const deleted = await Terrain.delete(id);
-
-    return res.json({
-      success: true,
-      message: "Terreno eliminado exitosamente",
-      data: deleted,
-    });
-  } catch (error) {
-    console.error("Error in deleteTerrain:", error);
-    return res.status(500).json({
+  if (Number.isNaN(id) || id <= 0) {
+    return res.status(400).json({
       success: false,
-      message: "Error al eliminar el terreno",
+      message: "ID de terreno inválido",
     });
   }
-};
+
+  // Verificar propiedad del terreno
+  const existing = await Terrain.findByIdAndUser(id, userId);
+
+  if (!existing) {
+    return res.status(404).json({
+      success: false,
+      message: "Terreno no encontrado",
+    });
+  }
+
+  // Eliminación real (no soft delete como en tractores/implementos)
+  const deleted = await Terrain.delete(id);
+
+  return res.json({
+    success: true,
+    message: "Terreno eliminado exitosamente",
+    data: deleted,
+  });
+});
 
 export default {
   getAllTerrains,

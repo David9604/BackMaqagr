@@ -20,6 +20,7 @@ import Implement from '../models/Implement.js';
 import Recommendation from '../models/Recommendation.js';
 import { generateRecommendation as generateRec, analyzeTerrain } from '../services/recommendationService.js';
 import { calculateMinimumPower } from '../services/minimumPowerService.js';
+import { asyncHandler } from '../middleware/error.middleware.js';
 
 // CONSTANTES
 
@@ -137,10 +138,8 @@ const validateTerrainOwnership = async (terrainId, userId) => {
  * 
  * @returns {Object} Recomendaciones con tractores hidratados y explicaciones
  */
-export const generateRecommendation = async (req, res) => {
+export const generateRecommendation = asyncHandler(async (req, res) => {
   const client = await pool.connect();
-  
-  try {
     // 1. Extracción y validación de inputs
     const { terrain_id, implement_id, working_depth_m, work_type } = req.body;
     const user_id = extractUserId(req);
@@ -399,20 +398,10 @@ export const generateRecommendation = async (req, res) => {
       },
     });
     
-  } catch (error) {
-    // Rollback en caso de error
-    await client.query('ROLLBACK');
-    console.error('Error en generateRecommendation:', error);
-    
-    res.status(500).json({
-      success: false,
-      message: 'Error procesando la solicitud de recomendación',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-    });
   } finally {
     client.release();
   }
-};
+});
 
 /**
  * Obtiene el historial de recomendaciones del usuario
@@ -426,8 +415,7 @@ export const generateRecommendation = async (req, res) => {
  * 
  * @returns {Object} Lista paginada de recomendaciones
  */
-export const getRecommendationHistory = async (req, res) => {
-  try {
+export const getRecommendationHistory = asyncHandler(async (req, res) => {
     // 1. Extraer user_id del JWT
     const user_id = extractUserId(req);
     
@@ -574,8 +562,7 @@ export const getRecommendationHistory = async (req, res) => {
  * 
  * @returns {Object} Detalle completo de la recomendación
  */
-export const getRecommendationById = async (req, res) => {
-  try {
+export const getRecommendationById = asyncHandler(async (req, res) => {
     const user_id = extractUserId(req);
     const { id } = req.params;
     
@@ -660,7 +647,7 @@ export const getRecommendationById = async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
-};
+});
 
 
 // EXPORTS
