@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { pool } from './config/db.js';
-import calculationRoutes from './routes/calculationRoutes.js';
+import calculationRoutes from './routes/calculation.routes.js';
 import tractorRoutes from './routes/tractor.routes.js';
 import implementRoutes from './routes/implement.routes.js';
 import terrainRoutes from './routes/terrain.routes.js';
@@ -23,8 +23,8 @@ app.use("/api/auth", authRoutes);
 // Rutas de roles
 app.use('/api/roles', roleRoutes);
 
-// Rutas de cálculos de potencia
-app.use('/api', calculationRoutes);
+// Rutas de cálculos de potencia (semántica REST)
+app.use('/api/calculations', calculationRoutes);
 
 // Rutas públicas y protegidas
 app.use("/api/tractors", tractorRoutes);
