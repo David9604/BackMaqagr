@@ -8,6 +8,9 @@ import implementRoutes from './routes/implement.routes.js';
 import terrainRoutes from './routes/terrain.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import roleRoutes from './routes/role.routes.js';
+import recommendationRoutes from './routes/recommendation.routes.js';
+import terrainRoutes from './routes/terrain.routes.js';
+import implementRoutes from './routes/implement.routes.js';
 
 dotenv.config();
 const app = express();
@@ -25,6 +28,16 @@ app.use('/api/roles', roleRoutes);
 
 // Rutas de cálculos de potencia (semántica REST)
 app.use('/api/calculations', calculationRoutes);
+// Rutas de roles
+app.use('/api/roles', roleRoutes);
+// Rutas de recomendaciones
+app.use('/api/recommendations', recommendationRoutes);
+// Rutas de terrenos
+app.use('/api/terrains', terrainRoutes);
+// Rutas de implementos
+app.use('/api/implements', implementRoutes);
+
+app.get('/', (req, res) => res.send('API de tractores funcionando 🚜'));
 
 // Rutas públicas y protegidas
 app.use("/api/tractors", tractorRoutes);

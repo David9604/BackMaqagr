@@ -50,6 +50,7 @@ CREATE TABLE users (
 -- ============================================
 CREATE TABLE terrain (
     terrain_id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
     name VARCHAR(150) NOT NULL,
     altitude_meters DOUBLE PRECISION NOT NULL,
     slope_percentage DOUBLE PRECISION NOT NULL,
