@@ -4,7 +4,10 @@ import dotenv from 'dotenv';
 import { pool } from './config/db.js';
 import calculationRoutes from './routes/calculationRoutes.js';
 import tractorRoutes from './routes/tractor.routes.js';
+import implementRoutes from './routes/implement.routes.js';
+import terrainRoutes from './routes/terrain.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import roleRoutes from './routes/role.routes.js';
 
 dotenv.config();
 const app = express();
@@ -15,13 +18,18 @@ app.use(express.json());
 app.get('/', (req, res) => res.send('API de tractores funcionando 🚜'));
 
 // Rutas de autenticación
-app.use('/api/auth', authRoutes);
+app.use("/api/auth", authRoutes);
+
+// Rutas de roles
+app.use('/api/roles', roleRoutes);
 
 // Rutas de cálculos de potencia
 app.use('/api', calculationRoutes);
 
-// Rutas de tractores
-app.use('/api/tractors', tractorRoutes);
+// Rutas públicas y protegidas
+app.use("/api/tractors", tractorRoutes);
+app.use("/api/implements", implementRoutes);
+app.use("/api/terrains", terrainRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
