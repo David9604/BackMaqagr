@@ -3,35 +3,11 @@
  * Valida los datos del body antes de procesar la solicitud
  */
 
-/**
- * Valida que un valor sea un entero positivo mayor a 0
- * @param {any} value - Valor a validar
- * @returns {boolean}
- */
-const isPositiveInteger = (value) => {
-  const num = Number(value);
-  return Number.isInteger(num) && num > 0;
-};
-
-/**
- * Valida que un valor sea un número positivo (puede ser decimal)
- * @param {any} value - Valor a validar
- * @returns {boolean}
- */
-const isPositiveNumber = (value) => {
-  const num = Number(value);
-  return !isNaN(num) && num > 0;
-};
-
-/**
- * Valida que un valor sea un número no negativo (>= 0)
- * @param {any} value - Valor a validar
- * @returns {boolean}
- */
-const isNonNegativeNumber = (value) => {
-  const num = Number(value);
-  return !isNaN(num) && num >= 0;
-};
+import { 
+  isPositiveInteger, 
+  isPositiveNumber, 
+  isNonNegativeNumber 
+} from '../utils/validators.util.js';
 
 /**
  * Middleware para validar la solicitud de cálculo de pérdida de potencia
