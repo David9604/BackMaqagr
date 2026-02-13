@@ -9,8 +9,6 @@ import terrainRoutes from './routes/terrain.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import roleRoutes from './routes/role.routes.js';
 import recommendationRoutes from './routes/recommendation.routes.js';
-import terrainRoutes from './routes/terrain.routes.js';
-import implementRoutes from './routes/implement.routes.js';
 import logger from './utils/logger.js';
 import { notFound, errorHandler } from './middleware/error.middleware.js';
 
