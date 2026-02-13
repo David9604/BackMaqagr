@@ -37,8 +37,6 @@ app.use('/api/roles', roleRoutes);
 // Rutas de cálculos de potencia (semántica REST)
 app.use('/api/calculations', calculationRoutes);
 
-
-
 // Rutas de recomendaciones
 app.use('/api/recommendations', recommendationRoutes);
 
@@ -56,12 +54,9 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 4000;
-console.log('Attempting to start server on port:', PORT);
-const server = app.listen(PORT, () => {
+app.listen(PORT, () => {
   logger.info(`🚜 Servidor corriendo en puerto ${PORT}`);
   logger.info(`📡 Ambiente: ${process.env.NODE_ENV || 'development'}`);
 });
-console.log('Server object created:', !!server);
-console.log('Server address:', server ? server.address() : 'null');
 
 export default app;
