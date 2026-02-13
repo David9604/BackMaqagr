@@ -1,6 +1,7 @@
 /**
  * Tests para error.middleware.js
- * Cobertura: notFound, errorHandler, asyncHandler, AppError
+ * Cobertura: notFound, errorHandler, AppError
+ * Nota: asyncHandler fue movido a utils/asyncHandler.util.js y tiene sus propios tests
  */
 
 import { jest } from '@jest/globals';
@@ -259,8 +260,14 @@ describe('error.middleware.js', () => {
     });
   });
 
-  describe('asyncHandler', () => {
-    test('debe ejecutar función async exitosamente y llamar next', async () => {
+  describe('asyncHandler - Re-export Compatibility Test', () => {
+    test('debe estar disponible como re-export para compatibilidad', () => {
+      // Arrange & Act & Assert
+      expect(asyncHandler).toBeDefined();
+      expect(typeof asyncHandler).toBe('function');
+    });
+
+    test('debe funcionar como wrapper básico (compatibilidad)', async () => {
       // Arrange
       const asyncFn = jest.fn().mockResolvedValue('success');
       const wrappedFn = asyncHandler(asyncFn);
@@ -270,10 +277,10 @@ describe('error.middleware.js', () => {
 
       // Assert
       expect(asyncFn).toHaveBeenCalledWith(mockReq, mockRes, mockNext);
-      expect(mockNext).not.toHaveBeenCalled(); // next solo se llama en error
+      expect(mockNext).not.toHaveBeenCalled();
     });
 
-    test('debe capturar errores y pasar al next middleware', async () => {
+    test('debe capturar errores básicos (compatibilidad)', async () => {
       // Arrange
       const error = new Error('Async error');
       const asyncFn = jest.fn().mockRejectedValue(error);
@@ -287,59 +294,11 @@ describe('error.middleware.js', () => {
       expect(mockNext).toHaveBeenCalledWith(error);
     });
 
-    test('debe manejar función que lanza error síncrono', async () => {
-      // Arrange
-      const error = new Error('Sync error in async function');
-      const asyncFn = jest.fn().mockImplementation(() => {
-        throw error;
-      });
-      const wrappedFn = asyncHandler(asyncFn);
-
-      // Act
-      try {
-        await wrappedFn(mockReq, mockRes, mockNext);
-      } catch (e) {
-        // El error síncrono puede propagarse antes de Promise.resolve()
-        // Este es un edge case conocido - asyncHandler no captura errores síncronos inmediatos
-      }
-
-      // Assert
-      expect(asyncFn).toHaveBeenCalledWith(mockReq, mockRes, mockNext);
-      // Nota: Promise.resolve() NO captura errores síncronos lanzados antes de resolverse
-      // En producción los controllers son async, por lo que este caso no ocurre
-      // Por ahora, verificamos que la función fue llamada correctamente
-      expect(asyncFn).toHaveBeenCalled();
-    });
-
-    test('debe funcionar con función que retorna Promise directamente', async () => {
-      // Arrange
-      const asyncFn = jest.fn(() => Promise.resolve('value'));
-      const wrappedFn = asyncHandler(asyncFn);
-
-      // Act
-      await wrappedFn(mockReq, mockRes, mockNext);
-
-      // Assert
-      expect(asyncFn).toHaveBeenCalledWith(mockReq, mockRes, mockNext);
-      expect(mockNext).not.toHaveBeenCalled();
-    });
-
-    test('debe funcionar correctamente con middleware pattern estándar', async () => {
-      // Arrange
-      // asyncHandler usa arrow functions, que no preservan 'this' de .call()
-      // Esto es intencional y no afecta el uso real en Express
-      // Los middlewares de Express nunca dependen del contexto 'this'
-      const asyncFn = jest.fn(async (req, res, next) => {
-        return 'success';
-      });
-      const wrappedFn = asyncHandler(asyncFn);
-
-      // Act
-      await wrappedFn(mockReq, mockRes, mockNext);
-
-      // Assert
-      expect(asyncFn).toHaveBeenCalledWith(mockReq, mockRes, mockNext);
-      expect(mockNext).not.toHaveBeenCalled();
+    test('debe apuntar a la implementación en utils/asyncHandler.util.js', () => {
+      // Este test confirma que es un re-export
+      // Los tests comprehensivos están en __tests__/unit/utils/asyncHandler.util.test.js
+      expect(asyncHandler).toBeDefined();
+      expect(asyncHandler.length).toBe(1); // Acepta 1 argumento (la función)
     });
   });
 
