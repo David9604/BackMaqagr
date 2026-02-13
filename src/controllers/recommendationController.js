@@ -140,6 +140,8 @@ const validateTerrainOwnership = async (terrainId, userId) => {
  */
 export const generateRecommendation = asyncHandler(async (req, res) => {
   const client = await pool.connect();
+  
+  try {
     // 1. Extracción y validación de inputs
     const { terrain_id, implement_id, working_depth_m, work_type } = req.body;
     const user_id = extractUserId(req);
@@ -398,6 +400,10 @@ export const generateRecommendation = asyncHandler(async (req, res) => {
       },
     });
     
+  } catch (error) {
+    // Rollback en caso de error
+    await client.query('ROLLBACK');
+    throw error; // asyncHandler capturará esto
   } finally {
     client.release();
   }
@@ -416,6 +422,7 @@ export const generateRecommendation = asyncHandler(async (req, res) => {
  * @returns {Object} Lista paginada de recomendaciones
  */
 export const getRecommendationHistory = asyncHandler(async (req, res) => {
+  try {
     // 1. Extraer user_id del JWT
     const user_id = extractUserId(req);
     
@@ -550,7 +557,7 @@ export const getRecommendationHistory = asyncHandler(async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
-};
+});
 
 /**
  * Obtiene una recomendación específica por ID
@@ -563,6 +570,7 @@ export const getRecommendationHistory = asyncHandler(async (req, res) => {
  * @returns {Object} Detalle completo de la recomendación
  */
 export const getRecommendationById = asyncHandler(async (req, res) => {
+  try {
     const user_id = extractUserId(req);
     const { id } = req.params;
     
