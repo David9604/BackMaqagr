@@ -24,6 +24,8 @@ const getSoilCn = (soil) => {
 export const calculatePowerLoss = asyncHandler(async (req, res) => {
   // Cliente de conexión para transacción
   const client = await pool.connect();
+  
+  try {
     // 1. Extracción de inputs
     const { 
       tractor_id, 
@@ -157,6 +159,10 @@ export const calculatePowerLoss = asyncHandler(async (req, res) => {
         efficiency_percentage: results.efficiency
       }
     });
+  } catch (error) {
+    // Rollback en caso de error
+    await client.query('ROLLBACK');
+    throw error; // asyncHandler capturará esto
   } finally {
     // Liberar cliente al pool
     client.release();
