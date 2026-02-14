@@ -21,28 +21,25 @@ app.use(express.json());
 app.use(logger.requestLogger);
 
 // Ruta principal
-app.get('/', (req, res) => res.send('API de tractores funcionando 🚜'));
+app.get("/", (req, res) => res.send("API de tractores funcionando 🚜"));
 
 // Rutas de autenticación
 app.use("/api/auth", authRoutes);
 
-// Rutas de roles
-app.use('/api/roles', roleRoutes);
-
 // Rutas de cálculos de potencia (semántica REST)
-app.use('/api/calculations', calculationRoutes);
+app.use("/api/calculations", calculationRoutes);
 
 // Rutas de roles
-app.use('/api/roles', roleRoutes);
+app.use("/api/roles", roleRoutes);
 
 // Rutas de recomendaciones
-app.use('/api/recommendations', recommendationRoutes);
+app.use("/api/recommendations", recommendationRoutes);
 
 // Rutas de terrenos
-app.use('/api/terrains', terrainRoutes);
+app.use("/api/terrains", terrainRoutes);
 
 // Rutas de implementos
-app.use('/api/implements', implementRoutes);
+app.use("/api/implements", implementRoutes);
 
 // Rutas de tractores
 app.use("/api/tractors", tractorRoutes);
@@ -54,7 +51,7 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   logger.info(`🚜 Servidor corriendo en puerto ${PORT}`);
-  logger.info(`📡 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+  logger.info(`📡 Ambiente: ${process.env.NODE_ENV || "development"}`);
 });
 
 export default app;
