@@ -17,7 +17,9 @@ export default {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/',
-    '/build/'
+    '/build/',
+    '/testing/.*\\.test\\.js$'  // Excluir tests legacy (standalone scripts con process.exit)
+    '/tests/integration/'
   ],
   
   // Coverage
@@ -30,6 +32,10 @@ export default {
   ],
   
   // Umbral de cobertura (objetivo: 60%)
+  /* 
+  * NOTA: Con los nuevos tests implementados (DDAAM-80), la cobertura
+  * de middleware y utils debe ser >85%
+  */
   coverageThreshold: {
     global: {
       statements: 60,

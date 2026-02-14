@@ -23,6 +23,11 @@ app.use(logger.requestLogger);
 // Ruta principal
 app.get("/", (req, res) => res.send("API de tractores funcionando 🚜"));
 
+// Documentación Swagger
+setupSwagger(app);
+=======
+>>>>>>> origin/testing/DDAAM-80-Tests-E2E-y-Middleware
+
 // Rutas de autenticación
 app.use("/api/auth", authRoutes);
 
@@ -48,10 +53,21 @@ app.use("/api/tractors", tractorRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
+<<<<<<< HEAD
+// Solo iniciar servidor si no estamos en modo test (supertest maneja su propio servidor)
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => {
+    logger.info(`🚜 Servidor corriendo en puerto ${PORT}`);
+    logger.info(`📡 Ambiente: ${process.env.NODE_ENV || "development"}`);
+  });
+}
+=======
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   logger.info(`🚜 Servidor corriendo en puerto ${PORT}`);
   logger.info(`📡 Ambiente: ${process.env.NODE_ENV || "development"}`);
 });
+>>>>>>> origin/testing/DDAAM-80-Tests-E2E-y-Middleware
 
 export default app;
