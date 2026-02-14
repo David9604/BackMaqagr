@@ -22,7 +22,6 @@ app.use(logger.requestLogger);
 
 // Ruta principal
 app.get("/", (req, res) => res.send("API de tractores funcionando 🚜"));
-<<<<<<< HEAD
 
 // Documentación Swagger
 setupSwagger(app);
