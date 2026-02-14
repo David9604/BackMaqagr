@@ -9,6 +9,8 @@ import terrainRoutes from './routes/terrain.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import roleRoutes from './routes/role.routes.js';
 import recommendationRoutes from './routes/recommendation.routes.js';
+import terrainRoutes from './routes/terrain.routes.js';
+import implementRoutes from './routes/implement.routes.js';
 import logger from './utils/logger.js';
 import { notFound, errorHandler } from './middleware/error.middleware.js';
 
@@ -23,6 +25,9 @@ app.use(logger.requestLogger);
 // Ruta principal
 app.get('/', (req, res) => res.send('API de tractores funcionando 🚜'));
 
+// Documentación Swagger
+setupSwagger(app);
+
 // Rutas de autenticación
 app.use("/api/auth", authRoutes);
 
@@ -32,8 +37,7 @@ app.use('/api/roles', roleRoutes);
 // Rutas de cálculos de potencia (semántica REST)
 app.use('/api/calculations', calculationRoutes);
 
-// Rutas de roles
-app.use('/api/roles', roleRoutes);
+
 
 // Rutas de recomendaciones
 app.use('/api/recommendations', recommendationRoutes);
@@ -52,9 +56,12 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
+console.log('Attempting to start server on port:', PORT);
+const server = app.listen(PORT, () => {
   logger.info(`🚜 Servidor corriendo en puerto ${PORT}`);
   logger.info(`📡 Ambiente: ${process.env.NODE_ENV || 'development'}`);
 });
+console.log('Server object created:', !!server);
+console.log('Server address:', server ? server.address() : 'null');
 
 export default app;
