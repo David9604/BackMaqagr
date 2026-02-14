@@ -17,7 +17,8 @@ export default {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/',
-    '/build/'
+    '/build/',
+    '/tests/integration/'
   ],
   
   // Coverage

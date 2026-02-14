@@ -48,10 +48,13 @@ app.use("/api/tractors", tractorRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  logger.info(`🚜 Servidor corriendo en puerto ${PORT}`);
-  logger.info(`📡 Ambiente: ${process.env.NODE_ENV || "development"}`);
-});
+// Solo iniciar servidor si no estamos en modo test (supertest maneja su propio servidor)
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => {
+    logger.info(`🚜 Servidor corriendo en puerto ${PORT}`);
+    logger.info(`📡 Ambiente: ${process.env.NODE_ENV || "development"}`);
+  });
+}
 
 export default app;
