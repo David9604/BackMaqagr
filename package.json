@@ -10,6 +10,8 @@
     "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPatterns=unit",
     "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPatterns=e2e",
     "test:middleware": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPatterns=middleware",
+    "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.integration.config.js",
+    "test:integration:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.integration.config.js --coverage",
     "start": "nodemon src/app.js"
   },
   "keywords": [],
