@@ -9,7 +9,7 @@ import { setupTestDB } from '../../src/config/db.test.js';
 
 export default async function globalSetup() {
   console.log('\n[GLOBAL SETUP] Iniciando configuración de tests de integración...');
-  
+
   try {
     await setupTestDB();
     console.log('[GLOBAL SETUP] Base de datos de test lista\n');
