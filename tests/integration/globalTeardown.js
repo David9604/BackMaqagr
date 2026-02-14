@@ -9,7 +9,7 @@ import { teardownTestDB } from '../../src/config/db.test.js';
 
 export default async function globalTeardown() {
   console.log('\n[GLOBAL TEARDOWN] Limpiando base de datos de test...');
-  
+
   try {
     await teardownTestDB();
     console.log('[GLOBAL TEARDOWN] Limpieza completada\n');

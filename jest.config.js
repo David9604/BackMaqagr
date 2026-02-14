@@ -19,6 +19,7 @@ export default {
     '/dist/',
     '/build/',
     '/testing/.*\\.test\\.js$'  // Excluir tests legacy (standalone scripts con process.exit)
+    '/tests/integration/'
   ],
   
   // Coverage

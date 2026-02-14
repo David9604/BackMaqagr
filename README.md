@@ -56,6 +56,7 @@ psql -d MaqAgr -f docs/dbSetting/users_202601311817.sql
 psql -d MaqAgr -f docs/dbSetting/tractor_202601311817.sql
 psql -d MaqAgr -f docs/dbSetting/implement_202601311817.sql
 psql -d MaqAgr -f docs/dbSetting/terrain_202601311817.sql
+psql -d MaqAgr -f database/indexes.sql
 ```
 
 ### Ejecución
