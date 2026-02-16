@@ -1,16 +1,18 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import { pool } from "./config/db.js";
-import calculationRoutes from "./routes/calculation.routes.js";
-import tractorRoutes from "./routes/tractor.routes.js";
-import implementRoutes from "./routes/implement.routes.js";
-import terrainRoutes from "./routes/terrain.routes.js";
-import authRoutes from "./routes/auth.routes.js";
-import roleRoutes from "./routes/role.routes.js";
-import recommendationRoutes from "./routes/recommendation.routes.js";
-import logger from "./utils/logger.js";
-import { notFound, errorHandler } from "./middleware/error.middleware.js";
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { pool } from './config/db.js';
+import calculationRoutes from './routes/calculation.routes.js';
+import tractorRoutes from './routes/tractor.routes.js';
+import implementRoutes from './routes/implement.routes.js';
+import terrainRoutes from './routes/terrain.routes.js';
+import authRoutes from './routes/auth.routes.js';
+import roleRoutes from './routes/role.routes.js';
+import recommendationRoutes from './routes/recommendation.routes.js';
+import { setupSwagger } from './swagger/swagger.js';
+
+import logger from './utils/logger.js';
+import { notFound, errorHandler } from './middleware/error.middleware.js';
 
 dotenv.config();
 const app = express();
@@ -22,6 +24,9 @@ app.use(logger.requestLogger);
 
 // Ruta principal
 app.get("/", (req, res) => res.send("API de tractores funcionando 🚜"));
+
+// Documentación Swagger
+setupSwagger(app);
 
 // Rutas de autenticación
 app.use("/api/auth", authRoutes);
