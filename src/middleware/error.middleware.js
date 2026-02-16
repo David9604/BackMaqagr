@@ -4,6 +4,7 @@
  */
 
 import logger from '../utils/logger.js';
+import { asyncHandler as asyncHandlerUtil } from '../utils/asyncHandler.util.js';
 
 /**
  * Handler para rutas no encontradas (404)
@@ -123,12 +124,12 @@ export const errorHandler = (err, req, res, next) => {
 /**
  * Wrapper para funciones async en rutas
  * Captura errores automáticamente y los pasa al error handler
+ * Re-exportado desde utils/asyncHandler.util.js para mantener compatibilidad
+ * @deprecated Importa directamente desde '../utils/asyncHandler.util.js'
  * @param {Function} fn - Función async a ejecutar
  * @returns {Function} Middleware function
  */
-export const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
+export const asyncHandler = asyncHandlerUtil;
 
 /**
  * Clase para errores personalizados con código de estado
