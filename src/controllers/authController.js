@@ -7,7 +7,8 @@ import bcrypt from 'bcrypt';
 import { generateToken } from '../utils/jwt.util.js';
 import { pool } from '../config/db.js';
 import User from '../models/User.js';
-import { asyncHandler, AppError } from '../middleware/error.middleware.js';
+import { asyncHandler } from '../middleware/error.middleware.js';
+import { AppError } from '../utils/errors.util.js';
 import {
     successResponse,
     createdResponse,
@@ -123,11 +124,13 @@ export const login = asyncHandler(async (req, res) => {
 
     // Verificar si el usuario existe
     if (!user) {
+        logger.warn('Failed login attempt: user not found', { email: email.toLowerCase() });
         return unauthorizedResponse(res, 'Credenciales inválidas');
     }
 
     // Verificar que el usuario esté activo
     if (user.status !== 'active') {
+        logger.warn('Failed login attempt: inactive user', { email: email.toLowerCase(), userId: user.user_id, status: user.status });
         return unauthorizedResponse(res, 'Usuario inactivo o suspendido');
     }
 
@@ -135,6 +138,7 @@ export const login = asyncHandler(async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
+        logger.warn('Failed login attempt: invalid password', { email: email.toLowerCase(), userId: user.user_id });
         return unauthorizedResponse(res, 'Credenciales inválidas');
     }
 
