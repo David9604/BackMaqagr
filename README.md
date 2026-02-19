@@ -544,10 +544,10 @@ npm run test:coverage
 npm run test:watch
 
 # Tests E2E solamente
-npm test -- --testPathPattern="e2e"
+npm run test:e2e
 
 # Tests unitarios solamente
-npm test -- --testPathPattern="unit"
+npm run test:unit
 ```
 
 ### Cobertura

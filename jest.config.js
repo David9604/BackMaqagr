@@ -18,8 +18,9 @@ export default {
     '/node_modules/',
     '/dist/',
     '/build/',
-    '/testing/.*\\.test\\.js$'  // Excluir tests legacy (standalone scripts con process.exit)
-    '/tests/integration/'
+    '/testing/.*\\.test\\.js$',  // Excluir tests legacy (standalone scripts con process.exit)
+    '/tests/integration/',
+    '/src/config/db.test.js'    // Helper de integración, no contiene tests unitarios
   ],
   
   // Coverage
@@ -28,6 +29,8 @@ export default {
     '!src/app.js',
     '!src/scripts/**',
     '!src/test-*.js',
+    '!src/models/**',           // Modelos requieren DB real; cubiertos por tests de integración
+    '!src/config/db.test.js',  // Helper de integración, no código de producción
     '!**/node_modules/**'
   ],
   
