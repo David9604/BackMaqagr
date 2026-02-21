@@ -17,6 +17,7 @@ import { notFound, errorHandler } from "./middleware/error.middleware.js";
 import { securityHeaders } from "./middleware/security.middleware.js";
 import { apiLimiter } from "./middleware/rateLimiter.middleware.js";
 import { corsMiddleware } from "./middleware/cors.middleware.js";
+import { sanitizeInputs } from "./middleware/sanitize.middleware.js";
 
 dotenv.config();
 const app = express();
@@ -28,6 +29,7 @@ app.set("trust proxy", 1);
 app.use(securityHeaders);
 app.use(corsMiddleware);
 app.use(express.json());
+app.use(sanitizeInputs);
 app.use(logger.requestLogger);
 
 // Ruta principal

@@ -29,7 +29,8 @@
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.17.2",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "xss": "^1.0.15"
   },
   "devDependencies": {
     "@jest/globals": "^30.2.0",
