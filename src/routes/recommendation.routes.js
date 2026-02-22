@@ -1,10 +1,12 @@
 import { Router } from 'express';
-import { 
-  generateRecommendation, 
-  getRecommendationHistory, 
-  getRecommendationById 
+import {
+  generateRecommendation,
+  getRecommendationHistory,
+  getRecommendationById
 } from '../controllers/recommendationController.js';
 import { verifyTokenMiddleware } from '../middleware/auth.middleware.js';
+
+import { cacheMiddleware } from '../middleware/cache.middleware.js';
 
 const router = Router();
 
@@ -30,7 +32,7 @@ router.post('/generate', verifyTokenMiddleware, generateRecommendation);
  * @query {number} [limit=10] - Registros por página (máx: 50)
  * @query {string} [work_type] - Filtro por tipo de trabajo
  */
-router.get('/history', verifyTokenMiddleware, getRecommendationHistory);
+router.get('/history', verifyTokenMiddleware, cacheMiddleware(3600), getRecommendationHistory);
 
 /**
  * @route GET /api/recommendations/:id
