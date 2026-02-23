@@ -1,38 +1,45 @@
 import Tractor from '../models/Tractor.js';
 import { asyncHandler } from '../middleware/error.middleware.js';
 
-// Helpers de paginación
-const getPaginationParams = (req) => {
-  const limitParam = parseInt(req.query.limit, 10);
-  const offsetParam = parseInt(req.query.offset, 10);
+const applyPagination = (items, paginationParams) => {
+  const { limit, offset, sort, order, page } = paginationParams;
 
-  const limit = Number.isNaN(limitParam) || limitParam <= 0 ? 10 : limitParam;
-  const offset = Number.isNaN(offsetParam) || offsetParam < 0 ? 0 : offsetParam;
+  // Ordenamiento dinámico
+  if (sort && items.length > 0 && items[0].hasOwnProperty(sort)) {
+    items.sort((a, b) => {
+      let valA = a[sort];
+      let valB = b[sort];
 
-  return { limit, offset };
-};
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
 
-const applyPagination = (items, { limit, offset }) => {
+      if (valA < valB) return order === 'desc' ? 1 : -1;
+      if (valA > valB) return order === 'desc' ? -1 : 1;
+      return 0;
+    });
+  }
+
   const total = items.length;
+  const totalPages = Math.ceil(total / limit);
   const start = offset;
   const end = offset + limit;
   const data = items.slice(start, end);
 
-  return { data, total, limit, offset };
+  return { data, total, limit, page, totalPages };
 };
 
 export const getAllTractors = asyncHandler(async (req, res) => {
   const tractors = await Tractor.getAll();
-  const { limit, offset } = getPaginationParams(req);
-  const { data, total } = applyPagination(tractors, { limit, offset });
+  const { data, total, limit, page, totalPages } = applyPagination(tractors, req.pagination);
 
   return res.json({
     success: true,
     data,
     pagination: {
-      total,
+      page,
       limit,
-      offset,
+      total,
+      totalPages,
     },
   });
 });
@@ -63,17 +70,27 @@ export const getTractorById = asyncHandler(async (req, res) => {
 });
 
 export const searchTractors = asyncHandler(async (req, res) => {
-  const { brand, model, minPower, maxPower } = req.query;
+  const { brand, model, minPower, maxPower, search, type, area } = req.query;
 
   // Usamos el modelo Tractor para obtener todos y filtramos en memoria
   const tractors = await Tractor.getAll();
 
   let filtered = tractors;
 
+  // Búsqueda general en nombre o marca
+  if (search) {
+    const searchLower = search.toLowerCase();
+    filtered = filtered.filter((t) =>
+      (t.name && t.name.toLowerCase().includes(searchLower)) ||
+      (t.brand && t.brand.toLowerCase().includes(searchLower))
+    );
+  }
+
+  // Filtro exacto o dinámico por brand
   if (brand) {
     const brandLower = brand.toLowerCase();
     filtered = filtered.filter((t) =>
-      t.brand && t.brand.toLowerCase().includes(brandLower),
+      t.brand && t.brand.toLowerCase() === brandLower
     );
   }
 
@@ -81,6 +98,14 @@ export const searchTractors = asyncHandler(async (req, res) => {
     const modelLower = model.toLowerCase();
     filtered = filtered.filter((t) =>
       t.model && t.model.toLowerCase().includes(modelLower),
+    );
+  }
+
+  // type y area (si aplica a tractores)
+  if (type) {
+    const typeLower = type.toLowerCase();
+    filtered = filtered.filter((t) =>
+      t.traction_type && t.traction_type.toLowerCase() === typeLower
     );
   }
 
@@ -95,20 +120,23 @@ export const searchTractors = asyncHandler(async (req, res) => {
     filtered = filtered.filter((t) => t.engine_power_hp <= maxPowerNum);
   }
 
-  const { limit, offset } = getPaginationParams(req);
-  const { data, total } = applyPagination(filtered, { limit, offset });
+  const { data, total, limit, page, totalPages } = applyPagination(filtered, req.pagination);
 
   return res.json({
     success: true,
     data,
     pagination: {
-      total,
+      page,
       limit,
-      offset,
+      total,
+      totalPages,
     },
     filters: {
+      search: search || null,
       brand: brand || null,
       model: model || null,
+      type: type || null,
+      area: area || null,
       minPower: minPowerNum,
       maxPower: maxPowerNum,
     },
@@ -117,16 +145,16 @@ export const searchTractors = asyncHandler(async (req, res) => {
 
 export const getAvailableTractors = asyncHandler(async (req, res) => {
   const tractors = await Tractor.getAvailable();
-  const { limit, offset } = getPaginationParams(req);
-  const { data, total } = applyPagination(tractors, { limit, offset });
+  const { data, total, limit, page, totalPages } = applyPagination(tractors, req.pagination);
 
   return res.json({
     success: true,
     data,
     pagination: {
-      total,
+      page,
       limit,
-      offset,
+      total,
+      totalPages,
     },
   });
 });

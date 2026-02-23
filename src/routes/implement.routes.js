@@ -13,6 +13,7 @@ import {
   isAdmin,
 } from '../middleware/auth.middleware.js';
 import { validateImplement } from '../middleware/validation.middleware.js';
+import { paginationMiddleware } from '../middleware/pagination.middleware.js';
 
 const router = Router();
 
@@ -72,7 +73,7 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/', getAllImplements);
+router.get('/', paginationMiddleware(), getAllImplements);
 
 /**
  * @swagger
@@ -125,7 +126,7 @@ router.get('/', getAllImplements);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/available', getAvailableImplements);
+router.get('/available', paginationMiddleware(), getAvailableImplements);
 
 /**
  * @swagger
@@ -210,7 +211,7 @@ router.get('/available', getAvailableImplements);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/search', searchImplements);
+router.get('/search', paginationMiddleware(), searchImplements);
 
 /**
  * @swagger

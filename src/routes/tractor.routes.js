@@ -13,6 +13,7 @@ import {
   isAdmin,
 } from '../middleware/auth.middleware.js';
 import { validateTractor } from '../middleware/validation.middleware.js';
+import { paginationMiddleware } from '../middleware/pagination.middleware.js';
 
 const router = Router();
 
@@ -72,7 +73,7 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/', getAllTractors);
+router.get('/', paginationMiddleware(), getAllTractors);
 
 /**
  * @swagger
@@ -125,7 +126,7 @@ router.get('/', getAllTractors);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/available', getAvailableTractors);
+router.get('/available', paginationMiddleware(), getAvailableTractors);
 
 /**
  * @swagger
@@ -219,7 +220,7 @@ router.get('/available', getAvailableTractors);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/search', searchTractors);
+router.get('/search', paginationMiddleware(), searchTractors);
 
 /**
  * @swagger
