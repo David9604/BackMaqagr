@@ -3,16 +3,20 @@
  * Endpoints públicos y protegidos para auth
  */
 
-import { Router } from 'express';
+import { Router } from "express";
 import {
-    register,
-    login,
-    logout,
-    getProfile,
-    updateProfile,
-    changePassword
-} from '../controllers/authController.js';
-import { verifyTokenMiddleware } from '../middleware/auth.middleware.js';
+  register,
+  login,
+  logout,
+  getProfile,
+  updateProfile,
+  changePassword,
+} from "../controllers/authController.js";
+import { verifyTokenMiddleware } from "../middleware/auth.middleware.js";
+import {
+  loginLimiter,
+  publicLimiter,
+} from "../middleware/rateLimiter.middleware.js";
 
 const router = Router();
 
@@ -97,7 +101,7 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/register', register);
+router.post("/register", publicLimiter, register);
 
 /**
  * @swagger
@@ -167,7 +171,7 @@ router.post('/register', register);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/login', login);
+router.post("/login", loginLimiter, login);
 
 // ==================== RUTAS PROTEGIDAS ====================
 
@@ -201,7 +205,7 @@ router.post('/login', login);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/logout', verifyTokenMiddleware, logout);
+router.post("/logout", verifyTokenMiddleware, logout);
 
 /**
  * @swagger
@@ -244,7 +248,7 @@ router.post('/logout', verifyTokenMiddleware, logout);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/profile', verifyTokenMiddleware, getProfile);
+router.get("/profile", verifyTokenMiddleware, getProfile);
 
 /**
  * @swagger
@@ -308,7 +312,7 @@ router.get('/profile', verifyTokenMiddleware, getProfile);
  *               success: false
  *               message: "El email ya está en uso por otro usuario"
  */
-router.put('/profile', verifyTokenMiddleware, updateProfile);
+router.put("/profile", verifyTokenMiddleware, updateProfile);
 
 /**
  * @swagger
@@ -364,7 +368,6 @@ router.put('/profile', verifyTokenMiddleware, updateProfile);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.put('/password', verifyTokenMiddleware, changePassword);
+router.put("/password", verifyTokenMiddleware, changePassword);
 
 export default router;
-
