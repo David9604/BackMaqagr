@@ -11,6 +11,7 @@
 
 ## Tabla de Contenidos
 - [Instalación y Ejecución](#-instalación-y-ejecución)
+- [Testing](#-testing)
 - [Formato de Respuestas](#-formato-de-respuestas)
 - [Códigos HTTP](#-códigos-http)
 - [Autenticación JWT](#-autenticación-jwt)
@@ -526,28 +527,32 @@ const myRoute = asyncHandler(async (req, res) => {
 
 ---
 
-## [TEST] Testing
+## 🧪 Testing
+
+El proyecto cuenta con una suite completa de tests unitarios y end-to-end (E2E).
+
+### Quick Start
 
 ```bash
-# Ejecutar tests
+# Ejecutar todos los tests
 npm test
 
-# Tests específicos
-npm test -- minimumPowerService.test.js
+# Tests con cobertura
+npm run test:coverage
+
+# Tests en modo watch (desarrollo)
+npm run test:watch
+
+# Tests E2E solamente
+npm run test:e2e
+
+# Tests unitarios solamente
+npm run test:unit
 ```
 
----
+### Cobertura
 
-
-### [NOTE] Convenciones de Commits
-
-| Prefijo | Uso |
-|---------|-----|
-| `feature:` | Nueva funcionalidad |
-| `fix:` | Corrección de bug |
-| `refactor:` | Refactorización de código |
-| `docs:` | Cambios en documentación |
-| `test:` | Agregar o modificar tests |
-| `chore:` | Tareas de mantenimiento |
-
----
+- [x] **Tests Unitarios**: Middleware, utilidades, validaciones
+- [x] **Tests E2E**: Flujos completos de autenticación, cálculos y recomendaciones
+- [x] **Helpers**: Factory de datos, cliente API, limpieza de DB
+- [=] **Total**: 97+ tests implementados

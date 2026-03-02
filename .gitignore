@@ -19,7 +19,11 @@ yarn-error.log*
 .env.*.local
 
 # Logs
+/logs/
 logs/
+logs/out/
+/logs/out/
+
 # debug
 *.log
 *.log.*

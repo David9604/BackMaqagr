@@ -7,6 +7,9 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPatterns=unit",
+    "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPatterns=e2e",
+    "test:middleware": "node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPatterns=middleware",
     "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.integration.config.js",
     "test:integration:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.integration.config.js --coverage",
     "start": "nodemon src/app.js"
@@ -22,8 +25,16 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "ioredis": "^5.9.3",
+    "express-rate-limit": "^8.2.1",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
-    "pg": "^8.17.2"
+    "morgan": "^1.10.1",
+    "pg": "^8.17.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0"
+    "xss": "^1.0.15"
   },
   "devDependencies": {
     "@jest/globals": "^30.2.0",
