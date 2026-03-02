@@ -1,144 +1,152 @@
 /**
- * Error Middleware
- * Maneja errores de forma centralizada en la aplicación
+ * Error Middleware — DDAAM-110
+ * Maneja errores de forma centralizada con logging mejorado:
+ *  - 4xx → logger.warn()  (errores de cliente)
+ *  - 5xx → logger.error() (errores de servidor, con stack trace completo)
+ *  - Correlación por request-id
+ *  - Datos del usuario autenticado si existen
  */
 
 import logger from '../utils/logger.js';
 import { asyncHandler as asyncHandlerUtil } from '../utils/asyncHandler.util.js';
+import {
+  AppError as AppErrorBase,
+  ValidationError,
+  AuthenticationError,
+  AuthorizationError,
+  NotFoundError,
+} from '../utils/errors.util.js';
 
 /**
  * Handler para rutas no encontradas (404)
- * @param {Object} req - Request object
- * @param {Object} res - Response object
- * @param {Function} next - Next middleware function
  */
 export const notFound = (req, res, next) => {
   const message = `Ruta no encontrada - ${req.originalUrl}`;
   logger.warn(message, {
+    requestId: req.requestId,
     method: req.method,
     url: req.originalUrl,
-    ip: req.ip
+    ip: req.ip,
+    userId: req.user?.user_id ?? null,
   });
-  
+
   res.status(404).json({
     success: false,
-    message: `La ruta ${req.originalUrl} no existe en este servidor`
+    message: `La ruta ${req.originalUrl} no existe en este servidor`,
   });
 };
 
 /**
- * Handler global de errores
- * @param {Error} err - Error object
- * @param {Object} req - Request object
- * @param {Object} res - Response object
- * @param {Function} next - Next middleware function
+ * Construye el contexto de log desde request + error.
+ * @param {Error}  err
+ * @param {Object} req
+ * @returns {Object}
+ */
+const buildLogContext = (err, req) => ({
+  requestId:  req.requestId ?? req.headers?.['x-request-id'] ?? null,
+  method:     req.method,
+  url:        req.originalUrl,
+  userId:     req.user?.user_id   ?? null,
+  userEmail:  req.user?.email     ?? null,
+  userRole:   req.user?.role_id   ?? null,
+  ip:         req.ip,
+  // Detalles del error
+  errorName:  err.name,
+  errorCode:  err.code  ?? null,
+  stack:      err.stack ?? null,
+  // Contexto de payload (sanitizado, sin passwords)
+  params: req.params,
+  query:  req.query,
+});
+
+/**
+ * Handler global de errores — DDAAM-110
+ * 4xx → warn, 5xx → error con stack trace completo.
  */
 export const errorHandler = (err, req, res, next) => {
-  // Log del error
-  logger.error('Error en la aplicación', {
-    error: err,
-    method: req.method,
-    url: req.originalUrl,
-    body: req.body,
-    params: req.params,
-    query: req.query
-  });
-
-  // Determinar el código de estado
+  // ── Determinar código y mensaje ────────────────────────────────────────────
   let statusCode = err.statusCode || 500;
-  let message = err.message || 'Error interno del servidor';
+  let message    = err.message    || 'Error interno del servidor';
 
-  // Manejo de errores específicos
-  
-  // Error de validación
-  if (err.name === 'ValidationError') {
-    statusCode = 400;
-    message = 'Error de validación';
-  }
+  // JWT
+  if (err.name === 'JsonWebTokenError')  { statusCode = 401; message = 'Token inválido'; }
+  if (err.name === 'TokenExpiredError')  { statusCode = 401; message = 'Token expirado'; }
 
-  // Error de JWT
-  if (err.name === 'JsonWebTokenError') {
-    statusCode = 401;
-    message = 'Token inválido';
-  }
+  // Validación (Mongoose / JOI / third-party — sin statusCode propio)
+  if (err.name === 'ValidationError' && !err.statusCode) { statusCode = 400; message = 'Error de validación'; }
 
-  if (err.name === 'TokenExpiredError') {
-    statusCode = 401;
-    message = 'Token expirado';
-  }
+  // Casteo de ID
+  if (err.name === 'CastError')          { statusCode = 400; message = 'Formato de ID inválido'; }
 
-  // Error de base de datos PostgreSQL
+  // Errores de PostgreSQL — log incluye query context si está disponible
   if (err.code) {
-    switch (err.code) {
-      case '23505': // Unique violation
-        statusCode = 409;
-        message = 'Ya existe un registro con estos datos';
-        break;
-      case '23503': // Foreign key violation
-        statusCode = 400;
-        message = 'Referencia a un registro que no existe';
-        break;
-      case '23502': // Not null violation
-        statusCode = 400;
-        message = 'Falta un campo obligatorio';
-        break;
-      case '22P02': // Invalid text representation
-        statusCode = 400;
-        message = 'Formato de datos inválido';
-        break;
-      case '42P01': // Undefined table
-        statusCode = 500;
-        message = 'Error de configuración de base de datos';
-        break;
-      default:
-        statusCode = 500;
-        message = 'Error en la base de datos';
+    const pgMap = {
+      '23505': [409, 'Ya existe un registro con estos datos'],
+      '23503': [400, 'Referencia a un registro que no existe'],
+      '23502': [400, 'Falta un campo obligatorio'],
+      '22P02': [400, 'Formato de datos inválido'],
+      '42P01': [500, 'Error de configuración de base de datos'],
+    };
+    const mapped = pgMap[err.code];
+    if (mapped) {
+      [statusCode, message] = mapped;
+    } else if (err.code.startsWith('2') || err.code.startsWith('4')) {
+      statusCode = 400;
+      message = 'Error en la base de datos';
+    } else {
+      statusCode = 500;
+      message = 'Error en la base de datos';
     }
   }
 
-  // Error de casteo
-  if (err.name === 'CastError') {
-    statusCode = 400;
-    message = 'Formato de ID inválido';
+  // ── Logging según severidad ────────────────────────────────────────────────
+  const ctx = buildLogContext(err, req);
+
+  if (statusCode >= 500) {
+    // Errores de servidor: log completo con stack trace
+    logger.error(`[${statusCode}] ${message}`, {
+      ...ctx,
+      // Contexto adicional de PostgreSQL si está disponible
+      pgQuery:  err.query   ?? null,
+      pgDetail: err.detail  ?? null,
+    });
+  } else {
+    // Errores de cliente (4xx): warn sin stack trace en producción
+    logger.warn(`[${statusCode}] ${message}`, {
+      ...ctx,
+      stack: process.env.NODE_ENV !== 'production' ? ctx.stack : undefined,
+    });
   }
 
-  // Construir respuesta
-  const response = {
-    success: false,
-    message: message
-  };
+  // ── Respuesta HTTP ─────────────────────────────────────────────────────────
+  const response = { success: false, message };
 
-  // Incluir detalles del error solo en development
+  // Incluir detalles solo en development
   if (process.env.NODE_ENV === 'development') {
     response.error = {
+      name:    err.name,
       message: err.message,
-      stack: err.stack,
-      code: err.code,
-      name: err.name
+      stack:   err.stack,
+      code:    err.code,
     };
+  }
+
+  // Incluir errores de validación si existen (ValidationError de errors.util.js)
+  if (err.errors?.length) {
+    response.errors = err.errors;
   }
 
   res.status(statusCode).json(response);
 };
 
 /**
- * Wrapper para funciones async en rutas
- * Captura errores automáticamente y los pasa al error handler
- * Re-exportado desde utils/asyncHandler.util.js para mantener compatibilidad
+ * Wrapper para funciones async en rutas.
  * @deprecated Importa directamente desde '../utils/asyncHandler.util.js'
- * @param {Function} fn - Función async a ejecutar
- * @returns {Function} Middleware function
  */
 export const asyncHandler = asyncHandlerUtil;
 
 /**
- * Clase para errores personalizados con código de estado
+ * Re-exportaciones de utils/errors.util.js para compatibilidad con
+ * los controllers existentes que importan desde este middleware.
  */
-export class AppError extends Error {
-  constructor(message, statusCode = 500) {
-    super(message);
-    this.statusCode = statusCode;
-    this.name = 'AppError';
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
+export { AppErrorBase as AppError, ValidationError, AuthenticationError, AuthorizationError, NotFoundError };

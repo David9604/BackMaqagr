@@ -15,8 +15,12 @@ import {
 import { validateTractor } from '../middleware/validation.middleware.js';
 import { paginationMiddleware } from '../middleware/pagination.middleware.js';
 
+import { cacheMiddleware, invalidateCacheMiddleware } from '../middleware/cache.middleware.js';
+
 const router = Router();
 
+// Rutas públicas para el catálogo de tractores
+router.get('/', cacheMiddleware(86400), getAllTractors);
 // ==================== RUTAS PÚBLICAS ====================
 
 /**
@@ -277,6 +281,9 @@ router.get('/search', paginationMiddleware(), searchTractors);
  */
 router.get('/:id', getTractorById);
 
+router.post('/', verifyTokenMiddleware, isAdmin, validateTractor, invalidateCacheMiddleware('*tractors*'), createTractor);
+router.put('/:id', verifyTokenMiddleware, isAdmin, validateTractor, invalidateCacheMiddleware(['*tractors*', '*recommendations*']), updateTractor);
+router.delete('/:id', verifyTokenMiddleware, isAdmin, invalidateCacheMiddleware(['*tractors*', '*recommendations*']), deleteTractor);
 // ==================== RUTAS PROTEGIDAS (ADMIN) ====================
 
 /**
