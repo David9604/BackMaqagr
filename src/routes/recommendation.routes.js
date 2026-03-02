@@ -1,10 +1,12 @@
 import { Router } from 'express';
-import { 
-  generateRecommendation, 
-  getRecommendationHistory, 
-  getRecommendationById 
+import {
+  generateRecommendation,
+  getRecommendationHistory,
+  getRecommendationById
 } from '../controllers/recommendationController.js';
 import { verifyTokenMiddleware } from '../middleware/auth.middleware.js';
+
+import { cacheMiddleware } from '../middleware/cache.middleware.js';
 
 const router = Router();
 
@@ -211,7 +213,7 @@ router.post('/generate', verifyTokenMiddleware, generateRecommendation);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/history', verifyTokenMiddleware, getRecommendationHistory);
+router.get('/history', verifyTokenMiddleware, cacheMiddleware(3600), getRecommendationHistory);
 
 /**
  * @swagger

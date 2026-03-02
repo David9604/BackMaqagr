@@ -14,8 +14,12 @@ import {
 } from '../middleware/auth.middleware.js';
 import { validateImplement } from '../middleware/validation.middleware.js';
 
+import { cacheMiddleware, invalidateCacheMiddleware } from '../middleware/cache.middleware.js';
+
 const router = Router();
 
+// Rutas públicas para el catálogo de implementos
+router.get('/', cacheMiddleware(86400), getAllImplements);
 // ==================== RUTAS PÚBLICAS ====================
 
 /**
@@ -267,6 +271,10 @@ router.get('/search', searchImplements);
  */
 router.get('/:id', getImplementById);
 
+// Rutas protegidas (solo admin)
+router.post('/', verifyTokenMiddleware, isAdmin, validateImplement, invalidateCacheMiddleware('*implements*'), createImplement);
+router.put('/:id', verifyTokenMiddleware, isAdmin, validateImplement, invalidateCacheMiddleware(['*implements*', '*recommendations*']), updateImplement);
+router.delete('/:id', verifyTokenMiddleware, isAdmin, invalidateCacheMiddleware(['*implements*', '*recommendations*']), deleteImplement);
 // ==================== RUTAS PROTEGIDAS (ADMIN) ====================
 
 /**

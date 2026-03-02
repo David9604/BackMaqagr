@@ -2,6 +2,7 @@ import express from "express";
 // Eliminamos import cors from "cors", ya que se usa corsMiddleware;
 import dotenv from "dotenv";
 import { pool } from "./config/db.js";
+import { connectRedis } from "./config/redis.js";
 import calculationRoutes from "./routes/calculation.routes.js";
 import tractorRoutes from "./routes/tractor.routes.js";
 import implementRoutes from "./routes/implement.routes.js";
@@ -55,6 +56,10 @@ app.use("/api/terrains", apiLimiter, terrainRoutes);
 app.use("/api/implements", apiLimiter, implementRoutes);
 app.use("/api/tractors", apiLimiter, tractorRoutes);
 
+// Rutas de administración
+import adminRoutes from "./routes/admin.routes.js";
+app.use("/api/admin", adminRoutes);
+
 // Middleware de manejo de errores (DEBE IR AL FINAL)
 app.use(notFound);
 app.use(errorHandler);
@@ -62,10 +67,16 @@ app.use(errorHandler);
 // Solo iniciar servidor si no estamos en modo test (supertest maneja su propio servidor)
 if (process.env.NODE_ENV !== "test") {
   const PORT = process.env.PORT || 4000;
-  app.listen(PORT, () => {
-    logger.info(`🚜 Servidor corriendo en puerto ${PORT}`);
-    logger.info(`📡 Ambiente: ${process.env.NODE_ENV || "development"}`);
-  });
+
+  const startServer = async () => {
+    await connectRedis();
+    app.listen(PORT, () => {
+      logger.info(`🚜 Servidor corriendo en puerto ${PORT}`);
+      logger.info(`📡 Ambiente: ${process.env.NODE_ENV || "development"}`);
+    });
+  };
+
+  startServer();
 }
 
 export default app;
