@@ -8,7 +8,7 @@ import swaggerUi from 'swagger-ui-express';
 import { schemas } from './schemas.js';
 
 const options = {
-  definition: {
+  swaggerDefinition: {
     openapi: '3.0.3',
     info: {
       title: 'MaqAgr API - Sistema de Maquinaria Agrícola',

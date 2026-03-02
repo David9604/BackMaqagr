@@ -7,6 +7,7 @@ import {
   deleteTerrain,
 } from "../controllers/terrainController.js";
 import { verifyTokenMiddleware } from "../middleware/auth.middleware.js";
+import { paginationMiddleware } from "../middleware/pagination.middleware.js";
 
 import { cacheMiddleware, invalidateCacheMiddleware } from "../middleware/cache.middleware.js";
 
@@ -84,7 +85,7 @@ router.delete("/:id", verifyTokenMiddleware, invalidateCacheMiddleware(['*terrai
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get("/", verifyTokenMiddleware, getAllTerrains);
+router.get("/", verifyTokenMiddleware, paginationMiddleware(), getAllTerrains);
 
 /**
  * @swagger

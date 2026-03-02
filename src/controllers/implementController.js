@@ -1,38 +1,45 @@
 import Implement from '../models/Implement.js';
 import { asyncHandler } from '../middleware/error.middleware.js';
 
-// Helpers de paginación (mismo patrón que tractores)
-const getPaginationParams = (req) => {
-  const limitParam = parseInt(req.query.limit, 10);
-  const offsetParam = parseInt(req.query.offset, 10);
+const applyPagination = (items, paginationParams) => {
+  const { limit, offset, sort, order, page } = paginationParams;
 
-  const limit = Number.isNaN(limitParam) || limitParam <= 0 ? 10 : limitParam;
-  const offset = Number.isNaN(offsetParam) || offsetParam < 0 ? 0 : offsetParam;
+  // Ordenamiento dinámico
+  if (sort && items.length > 0 && items[0].hasOwnProperty(sort)) {
+    items.sort((a, b) => {
+      let valA = a[sort];
+      let valB = b[sort];
 
-  return { limit, offset };
-};
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
 
-const applyPagination = (items, { limit, offset }) => {
+      if (valA < valB) return order === 'desc' ? 1 : -1;
+      if (valA > valB) return order === 'desc' ? -1 : 1;
+      return 0;
+    });
+  }
+
   const total = items.length;
+  const totalPages = Math.ceil(total / limit);
   const start = offset;
   const end = offset + limit;
   const data = items.slice(start, end);
 
-  return { data, total, limit, offset };
+  return { data, total, limit, page, totalPages };
 };
 
 export const getAllImplements = asyncHandler(async (req, res) => {
   const implementsList = await Implement.getAll();
-  const { limit, offset } = getPaginationParams(req);
-  const { data, total } = applyPagination(implementsList, { limit, offset });
+  const { data, total, limit, page, totalPages } = applyPagination(implementsList, req.pagination);
 
   return res.json({
     success: true,
     data,
     pagination: {
-      total,
+      page,
       limit,
-      offset,
+      total,
+      totalPages,
     },
   });
 });
@@ -63,24 +70,42 @@ export const getImplementById = asyncHandler(async (req, res) => {
 });
 
 export const searchImplements = asyncHandler(async (req, res) => {
-  const { type, soilType, maxPower } = req.query;
+  const { type, soilType, maxPower, search, brand } = req.query;
 
   // Usamos el modelo Implement para obtener todos y filtramos en memoria
   const implementsList = await Implement.getAll();
 
   let filtered = implementsList;
 
+  // Búsqueda general por nombre o marca
+  if (search) {
+    const searchLower = search.toLowerCase();
+    filtered = filtered.filter((item) =>
+      (item.implement_name && item.implement_name.toLowerCase().includes(searchLower)) ||
+      (item.brand && item.brand.toLowerCase().includes(searchLower))
+    );
+  }
+
+  // Filtro exacto por marca
+  if (brand) {
+    const brandLower = brand.toLowerCase();
+    filtered = filtered.filter((item) =>
+      item.brand && item.brand.toLowerCase() === brandLower
+    );
+  }
+
+  // Filtro exacto (o generalizando type)
   if (type) {
     const typeLower = type.toLowerCase();
     filtered = filtered.filter((item) =>
-      item.implement_type && item.implement_type.toLowerCase().includes(typeLower),
+      item.implement_type && item.implement_type.toLowerCase() === typeLower
     );
   }
 
   if (soilType) {
     const soilLower = soilType.toLowerCase();
     filtered = filtered.filter((item) =>
-      item.soil_type && item.soil_type.toLowerCase().includes(soilLower),
+      item.soil_type && item.soil_type.toLowerCase().includes(soilLower)
     );
   }
 
@@ -90,18 +115,20 @@ export const searchImplements = asyncHandler(async (req, res) => {
     filtered = filtered.filter((item) => item.power_requirement_hp <= maxPowerNum);
   }
 
-  const { limit, offset } = getPaginationParams(req);
-  const { data, total } = applyPagination(filtered, { limit, offset });
+  const { data, total, limit, page, totalPages } = applyPagination(filtered, req.pagination);
 
   return res.json({
     success: true,
     data,
     pagination: {
-      total,
+      page,
       limit,
-      offset,
+      total,
+      totalPages,
     },
     filters: {
+      search: search || null,
+      brand: brand || null,
       type: type || null,
       soilType: soilType || null,
       maxPower: maxPowerNum,
@@ -111,16 +138,16 @@ export const searchImplements = asyncHandler(async (req, res) => {
 
 export const getAvailableImplements = asyncHandler(async (req, res) => {
   const implementsList = await Implement.getAvailable();
-  const { limit, offset } = getPaginationParams(req);
-  const { data, total } = applyPagination(implementsList, { limit, offset });
+  const { data, total, limit, page, totalPages } = applyPagination(implementsList, req.pagination);
 
   return res.json({
     success: true,
     data,
     pagination: {
-      total,
+      page,
       limit,
-      offset,
+      total,
+      totalPages,
     },
   });
 });

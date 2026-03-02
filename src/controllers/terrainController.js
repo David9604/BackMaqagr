@@ -1,24 +1,31 @@
 import Terrain from "../models/Terrain.js";
 import { asyncHandler } from '../middleware/error.middleware.js';
 
-// Helpers de paginación
-const getPaginationParams = (req) => {
-  const limitParam = parseInt(req.query.limit, 10);
-  const offsetParam = parseInt(req.query.offset, 10);
+const applyPagination = (items, paginationParams) => {
+  const { limit, offset, sort, order, page } = paginationParams;
 
-  const limit = Number.isNaN(limitParam) || limitParam <= 0 ? 10 : limitParam;
-  const offset = Number.isNaN(offsetParam) || offsetParam < 0 ? 0 : offsetParam;
+  // Ordenamiento dinámico
+  if (sort && items.length > 0 && items[0].hasOwnProperty(sort)) {
+    items.sort((a, b) => {
+      let valA = a[sort];
+      let valB = b[sort];
 
-  return { limit, offset };
-};
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
 
-const applyPagination = (items, { limit, offset }) => {
+      if (valA < valB) return order === 'desc' ? 1 : -1;
+      if (valA > valB) return order === 'desc' ? -1 : 1;
+      return 0;
+    });
+  }
+
   const total = items.length;
+  const totalPages = Math.ceil(total / limit);
   const start = offset;
   const end = offset + limit;
   const data = items.slice(start, end);
 
-  return { data, total, limit, offset };
+  return { data, total, limit, page, totalPages };
 };
 
 // ============================================
@@ -32,16 +39,16 @@ const applyPagination = (items, { limit, offset }) => {
 export const getAllTerrains = asyncHandler(async (req, res) => {
   const userId = req.user.user_id;
   const terrains = await Terrain.findByUserId(userId);
-  const { limit, offset } = getPaginationParams(req);
-  const { data, total } = applyPagination(terrains, { limit, offset });
+  const { data, total, limit, page, totalPages } = applyPagination(terrains, req.pagination);
 
   return res.json({
     success: true,
     data,
     pagination: {
-      total,
+      page,
       limit,
-      offset,
+      total,
+      totalPages,
     },
   });
 });
