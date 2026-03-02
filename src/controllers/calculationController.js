@@ -5,6 +5,7 @@ import Implement from '../models/Implement.js';
 import { calculateTotalLoss } from '../services/powerLossService.js';
 import { calculateMinimumPower as calcMinPower } from '../services/minimumPowerService.js';
 import { asyncHandler } from '../middleware/error.middleware.js';
+import logger from '../config/logger.js';
 
 /**
  * Mapea tipo de suelo a Índice de Cono (Cn) según ASABE D497.7
@@ -138,6 +139,17 @@ export const calculatePowerLoss = asyncHandler(async (req, res) => {
 
     // Confirmar transacción
     await client.query('COMMIT');
+
+    // DDAAM-113: Log del cálculo completado
+    logger.info('Power calculation completed', {
+      queryId,
+      userId:           user_id,
+      tractorId:        tractor_id,
+      terrainId:        terrain_id,
+      netPower:         results.netPower,
+      efficiency:       results.efficiency,
+      totalLoss:        results.losses.total,
+    });
 
     // 6. Enviar Respuesta Exitosa
     res.status(200).json({

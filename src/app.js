@@ -10,8 +10,10 @@ import authRoutes from "./routes/auth.routes.js";
 import roleRoutes from "./routes/role.routes.js";
 import recommendationRoutes from "./routes/recommendation.routes.js";
 import { setupSwagger } from "./swagger/swagger.js";
+import healthRoutes from "./routes/health.routes.js";
 
 import logger from "./utils/logger.js";
+import httpLogger from "./middleware/httpLogger.middleware.js";
 import { notFound, errorHandler } from "./middleware/error.middleware.js";
 
 import { securityHeaders } from "./middleware/security.middleware.js";
@@ -29,6 +31,7 @@ app.set("trust proxy", 1);
 app.use(securityHeaders);
 app.use(corsMiddleware);
 app.use(express.json());
+app.use(httpLogger); // DDAAM-109: Morgan + Winston HTTP logging
 app.use(sanitizeInputs);
 app.use(logger.requestLogger);
 
@@ -37,6 +40,9 @@ app.get("/", (req, res) => res.send("API de tractores funcionando 🚜"));
 
 // Documentación Swagger
 setupSwagger(app);
+
+// Health check
+app.use('/health', healthRoutes);
 
 // Rutas de autenticación
 app.use("/api/auth", authRoutes);
