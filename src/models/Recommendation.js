@@ -1,4 +1,4 @@
-import { pool } from '../config/db.js';
+import { pool } from "../config/db.js";
 
 class Recommendation {
   // Create new recommendation
@@ -10,7 +10,7 @@ class Recommendation {
       implement_id = null,
       compatibility_score,
       observations,
-      work_type
+      work_type,
     } = recommendationData;
 
     const query = `
@@ -22,8 +22,13 @@ class Recommendation {
       RETURNING *
     `;
     const values = [
-      user_id, terrain_id, tractor_id, implement_id,
-      compatibility_score, observations, work_type
+      user_id,
+      terrain_id,
+      tractor_id,
+      implement_id,
+      compatibility_score,
+      observations,
+      work_type,
     ];
     const result = await pool.query(query, values);
     return result.rows[0];
@@ -132,7 +137,7 @@ class Recommendation {
       implement_id,
       compatibility_score,
       observations,
-      work_type
+      work_type,
     } = updateData;
 
     const query = `
@@ -146,8 +151,12 @@ class Recommendation {
       RETURNING *
     `;
     const values = [
-      tractor_id, implement_id, compatibility_score,
-      observations, work_type, id
+      tractor_id,
+      implement_id,
+      compatibility_score,
+      observations,
+      work_type,
+      id,
     ];
     const result = await pool.query(query, values);
     return result.rows[0];
@@ -155,7 +164,8 @@ class Recommendation {
 
   // Delete recommendation
   static async delete(id) {
-    const query = 'DELETE FROM recommendation WHERE recommendation_id = $1 RETURNING *';
+    const query =
+      "DELETE FROM recommendation WHERE recommendation_id = $1 RETURNING *";
     const result = await pool.query(query, [id]);
     return result.rows[0];
   }
@@ -177,6 +187,23 @@ class Recommendation {
       ORDER BY r.compatibility_score DESC
     `;
     const result = await pool.query(query, [`%${workType}%`]);
+    return result.rows;
+  }
+  // Get recommendations by tractor
+  static async findByTractor(tractorId) {
+    const query = `
+      SELECT r.*,
+             u.name as user_name,
+             t.name as terrain_name,
+             i.implement_name
+      FROM recommendation r
+      LEFT JOIN users u ON r.user_id = u.user_id
+      LEFT JOIN terrain t ON r.terrain_id = t.terrain_id
+      LEFT JOIN implement i ON r.implement_id = i.implement_id
+      WHERE r.tractor_id = $1
+      ORDER BY r.recommendation_date DESC
+    `;
+    const result = await pool.query(query, [tractorId]);
     return result.rows;
   }
 }

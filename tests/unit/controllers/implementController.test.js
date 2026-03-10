@@ -15,6 +15,7 @@ const mockCreate = jest.fn();
 const mockUpdate = jest.fn();
 const mockDelete = jest.fn();
 const mockGetAvailable = jest.fn();
+const mockAdvancedSearch = jest.fn();
 
 // Mock de Implement model
 jest.unstable_mockModule("../../../src/models/Implement.js", () => ({
@@ -25,6 +26,16 @@ jest.unstable_mockModule("../../../src/models/Implement.js", () => ({
     update: mockUpdate,
     delete: mockDelete,
     getAvailable: mockGetAvailable,
+    advancedSearch: mockAdvancedSearch,
+  },
+  __esModule: true,
+}));
+
+// Mock de Tractor model
+const mockTractorFindById = jest.fn();
+jest.unstable_mockModule("../../../src/models/Tractor.js", () => ({
+  default: {
+    findById: mockTractorFindById,
   },
   __esModule: true,
 }));
@@ -36,6 +47,7 @@ const controller =
 const {
   getAllImplements,
   getImplementById,
+  searchImplements,
   createImplement,
   updateImplement,
   deleteImplement,
@@ -249,6 +261,155 @@ describe("implementController", () => {
       await callHandler(updateImplement, req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(404);
+    });
+  });
+
+  // ========================================================
+  // SEARCH IMPLEMENTS
+  // ========================================================
+  describe("searchImplements()", () => {
+    test("búsqueda con q → llama advancedSearch con término", async () => {
+      const ObjectContaining = expect.objectContaining;
+      const ArrayContaining = expect.arrayContaining;
+
+      const req = createMockReq(
+        {},
+        {},
+        { q: "arado", limit: "10", offset: "0" },
+      );
+      req.pagination = { limit: 10, offset: 0, page: 1 };
+      const res = createMockRes();
+      const next = createMockNext();
+
+      mockAdvancedSearch.mockResolvedValue({ data: [mockImplement], total: 1 });
+
+      await callHandler(searchImplements, req, res, next);
+
+      expect(mockAdvancedSearch).toHaveBeenCalledWith(
+        ObjectContaining({ q: "arado", limit: 10, offset: 0 }),
+        null,
+      );
+      expect(res.json).toHaveBeenCalledWith(
+        ObjectContaining({
+          success: true,
+          data: ArrayContaining([
+            ObjectContaining({ implement_name: "Arado de discos" }),
+          ]),
+          pagination: ObjectContaining({ total: 1, limit: 10, page: 1 }),
+          filters: ObjectContaining({ q: "arado", type: null }),
+        }),
+      );
+    });
+
+    test("búsqueda con filtros combinados (minWidth, maxWidth, requiredPower)", async () => {
+      const ObjectContaining = expect.objectContaining;
+      const req = createMockReq(
+        {},
+        {},
+        { type: "plow", minWidth: "2", maxWidth: "5", requiredPower: "100" },
+      );
+      req.pagination = { limit: 10, offset: 0, page: 1 };
+      const res = createMockRes();
+      const next = createMockNext();
+
+      mockAdvancedSearch.mockResolvedValue({ data: [mockImplement], total: 1 });
+
+      await callHandler(searchImplements, req, res, next);
+
+      expect(mockAdvancedSearch).toHaveBeenCalledWith(
+        ObjectContaining({
+          type: "plow",
+          minWidth: 2,
+          maxWidth: 5,
+          requiredPower: 100,
+        }),
+        null,
+      );
+    });
+
+    test("búsqueda con tractorId y compatibilidad", async () => {
+      const ObjectContaining = expect.objectContaining;
+      const req = createMockReq({}, {}, { tractorId: "1" });
+      req.pagination = { limit: 10, offset: 0, page: 1 };
+      const res = createMockRes();
+      const next = createMockNext();
+
+      const mockTractor = { tractor_id: 1, engine_power_hp: 120 };
+      mockTractorFindById.mockResolvedValue(mockTractor);
+      mockAdvancedSearch.mockResolvedValue({ data: [mockImplement], total: 1 });
+
+      await callHandler(searchImplements, req, res, next);
+
+      expect(mockTractorFindById).toHaveBeenCalledWith(1);
+      expect(mockAdvancedSearch).toHaveBeenCalledWith(
+        ObjectContaining({ tractorId: undefined }),
+        120,
+      );
+    });
+
+    test("retorna 400 si tractorId no es numérico", async () => {
+      const ObjectContaining = expect.objectContaining;
+      const req = createMockReq({}, {}, { tractorId: "abc" });
+      req.pagination = { limit: 10, offset: 0, page: 1 };
+      const res = createMockRes();
+      const next = createMockNext();
+
+      await callHandler(searchImplements, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        ObjectContaining({ success: false }),
+      );
+    });
+
+    test("retorna 404 si tractorId no existe", async () => {
+      const ObjectContaining = expect.objectContaining;
+      const req = createMockReq({}, {}, { tractorId: "999" });
+      req.pagination = { limit: 10, offset: 0, page: 1 };
+      const res = createMockRes();
+      const next = createMockNext();
+
+      mockTractorFindById.mockResolvedValue(null);
+
+      await callHandler(searchImplements, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith(
+        ObjectContaining({
+          success: false,
+          message: "Tractor referenciado no encontrado",
+        }),
+      );
+    });
+
+    test("retorna 400 si minWidth > maxWidth", async () => {
+      const ObjectContaining = expect.objectContaining;
+      const req = createMockReq({}, {}, { minWidth: "10", maxWidth: "5" });
+      req.pagination = { limit: 10, offset: 0, page: 1 };
+      const res = createMockRes();
+      const next = createMockNext();
+
+      await callHandler(searchImplements, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        ObjectContaining({ success: false }),
+      );
+    });
+
+    test("retorna 400 si minWidth es inválido", async () => {
+      const ObjectContaining = expect.objectContaining;
+      const req = createMockReq({}, {}, { minWidth: "abc" });
+      req.pagination = { limit: 10, offset: 0, page: 1 };
+      const res = createMockRes();
+      const next = createMockNext();
+
+      await callHandler(searchImplements, req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        ObjectContaining({ success: false }),
+      );
     });
   });
 

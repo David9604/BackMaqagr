@@ -1,5 +1,6 @@
-import Tractor from '../models/Tractor.js';
-import { asyncHandler } from '../middleware/error.middleware.js';
+import Tractor from "../models/Tractor.js";
+import Recommendation from "../models/Recommendation.js";
+import { asyncHandler } from "../middleware/error.middleware.js";
 
 const applyPagination = (items, paginationParams) => {
   const { limit, offset, sort, order, page } = paginationParams;
@@ -10,11 +11,11 @@ const applyPagination = (items, paginationParams) => {
       let valA = a[sort];
       let valB = b[sort];
 
-      if (typeof valA === 'string') valA = valA.toLowerCase();
-      if (typeof valB === 'string') valB = valB.toLowerCase();
+      if (typeof valA === "string") valA = valA.toLowerCase();
+      if (typeof valB === "string") valB = valB.toLowerCase();
 
-      if (valA < valB) return order === 'desc' ? 1 : -1;
-      if (valA > valB) return order === 'desc' ? -1 : 1;
+      if (valA < valB) return order === "desc" ? 1 : -1;
+      if (valA > valB) return order === "desc" ? -1 : 1;
       return 0;
     });
   }
@@ -30,7 +31,10 @@ const applyPagination = (items, paginationParams) => {
 
 export const getAllTractors = asyncHandler(async (req, res) => {
   const tractors = await Tractor.getAll();
-  const { data, total, limit, page, totalPages } = applyPagination(tractors, req.pagination);
+  const { data, total, limit, page, totalPages } = applyPagination(
+    tractors,
+    req.pagination,
+  );
 
   return res.json({
     success: true,
@@ -50,7 +54,7 @@ export const getTractorById = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
-      message: 'ID de tractor inválido',
+      message: "ID de tractor inválido",
     });
   }
 
@@ -59,7 +63,7 @@ export const getTractorById = asyncHandler(async (req, res) => {
   if (!tractor) {
     return res.status(404).json({
       success: false,
-      message: 'Tractor no encontrado',
+      message: "Tractor no encontrado",
     });
   }
 
@@ -70,57 +74,52 @@ export const getTractorById = asyncHandler(async (req, res) => {
 });
 
 export const searchTractors = asyncHandler(async (req, res) => {
-  const { brand, model, minPower, maxPower, search, type, area } = req.query;
-
-  // Usamos el modelo Tractor para obtener todos y filtramos en memoria
-  const tractors = await Tractor.getAll();
-
-  let filtered = tractors;
-
-  // Búsqueda general en nombre o marca
-  if (search) {
-    const searchLower = search.toLowerCase();
-    filtered = filtered.filter((t) =>
-      (t.name && t.name.toLowerCase().includes(searchLower)) ||
-      (t.brand && t.brand.toLowerCase().includes(searchLower))
-    );
-  }
-
-  // Filtro exacto o dinámico por brand
-  if (brand) {
-    const brandLower = brand.toLowerCase();
-    filtered = filtered.filter((t) =>
-      t.brand && t.brand.toLowerCase() === brandLower
-    );
-  }
-
-  if (model) {
-    const modelLower = model.toLowerCase();
-    filtered = filtered.filter((t) =>
-      t.model && t.model.toLowerCase().includes(modelLower),
-    );
-  }
-
-  // type y area (si aplica a tractores)
-  if (type) {
-    const typeLower = type.toLowerCase();
-    filtered = filtered.filter((t) =>
-      t.traction_type && t.traction_type.toLowerCase() === typeLower
-    );
-  }
+  const { q, brand, minPower, maxPower, type } = req.query;
+  const { limit, offset, page, sort, order } = req.pagination;
 
   const minPowerNum = minPower ? parseFloat(minPower) : null;
   const maxPowerNum = maxPower ? parseFloat(maxPower) : null;
 
-  if (minPowerNum !== null && !Number.isNaN(minPowerNum)) {
-    filtered = filtered.filter((t) => t.engine_power_hp >= minPowerNum);
+  // Validate numeric filters
+  if (minPower && (Number.isNaN(minPowerNum) || minPowerNum < 0)) {
+    return res.status(400).json({
+      success: false,
+      message: "minPower debe ser un número positivo",
+    });
   }
 
-  if (maxPowerNum !== null && !Number.isNaN(maxPowerNum)) {
-    filtered = filtered.filter((t) => t.engine_power_hp <= maxPowerNum);
+  if (maxPower && (Number.isNaN(maxPowerNum) || maxPowerNum < 0)) {
+    return res.status(400).json({
+      success: false,
+      message: "maxPower debe ser un número positivo",
+    });
   }
 
-  const { data, total, limit, page, totalPages } = applyPagination(filtered, req.pagination);
+  if (
+    minPowerNum !== null &&
+    maxPowerNum !== null &&
+    minPowerNum > maxPowerNum
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "minPower no puede ser mayor que maxPower",
+    });
+  }
+
+  const filters = {
+    q: q || null,
+    brand: brand || null,
+    minPower: minPowerNum,
+    maxPower: maxPowerNum,
+    type: type || null,
+    limit,
+    offset,
+    sort,
+    order,
+  };
+
+  const { data, total } = await Tractor.advancedSearch(filters);
+  const totalPages = Math.ceil(total / limit);
 
   return res.json({
     success: true,
@@ -132,20 +131,21 @@ export const searchTractors = asyncHandler(async (req, res) => {
       totalPages,
     },
     filters: {
-      search: search || null,
+      q: q || null,
       brand: brand || null,
-      model: model || null,
-      type: type || null,
-      area: area || null,
       minPower: minPowerNum,
       maxPower: maxPowerNum,
+      type: type || null,
     },
   });
 });
 
 export const getAvailableTractors = asyncHandler(async (req, res) => {
   const tractors = await Tractor.getAvailable();
-  const { data, total, limit, page, totalPages } = applyPagination(tractors, req.pagination);
+  const { data, total, limit, page, totalPages } = applyPagination(
+    tractors,
+    req.pagination,
+  );
 
   return res.json({
     success: true,
@@ -174,6 +174,17 @@ export const createTractor = asyncHandler(async (req, res) => {
     tire_pressure_psi,
     status,
   } = req.body || {};
+
+  // Validaciones de negocio
+  if (
+    engine_power_hp !== undefined &&
+    (Number(engine_power_hp) < 10 || Number(engine_power_hp) > 500)
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "La potencia del motor debe estar entre 10 y 500 HP",
+    });
+  }
 
   const payload = {
     name,
@@ -222,7 +233,7 @@ export const updateTractor = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
-      message: 'ID de tractor inválido',
+      message: "ID de tractor inválido",
     });
   }
 
@@ -231,7 +242,7 @@ export const updateTractor = asyncHandler(async (req, res) => {
   if (!existing) {
     return res.status(404).json({
       success: false,
-      message: 'Tractor no encontrado',
+      message: "Tractor no encontrado",
     });
   }
 
@@ -249,6 +260,17 @@ export const updateTractor = asyncHandler(async (req, res) => {
     tire_pressure_psi,
     status,
   } = req.body || {};
+
+  // Validaciones de negocio
+  if (
+    engine_power_hp !== undefined &&
+    (Number(engine_power_hp) < 10 || Number(engine_power_hp) > 500)
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "La potencia del motor debe estar entre 10 y 500 HP",
+    });
+  }
 
   const updateData = {
     name,
@@ -297,7 +319,7 @@ export const deleteTractor = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
-      message: 'ID de tractor inválido',
+      message: "ID de tractor inválido",
     });
   }
 
@@ -306,11 +328,21 @@ export const deleteTractor = asyncHandler(async (req, res) => {
   if (!existing) {
     return res.status(404).json({
       success: false,
-      message: 'Tractor no encontrado',
+      message: "Tractor no encontrado",
     });
   }
 
-  const updated = await Tractor.update(id, { status: 'inactive' });
+  // Verificar si tiene recomendaciones activas
+  const recommendations = await Recommendation.findByTractor(id);
+  if (recommendations && recommendations.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message:
+        "No se puede eliminar el tractor porque tiene recomendaciones asociadas",
+    });
+  }
+
+  const updated = await Tractor.update(id, { status: "inactive" });
 
   return res.json({
     success: true,

@@ -52,6 +52,7 @@ CREATE TABLE terrain (
     terrain_id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
     name VARCHAR(150) NOT NULL,
+    area_hectares DOUBLE PRECISION,
     altitude_meters DOUBLE PRECISION NOT NULL,
     slope_percentage DOUBLE PRECISION NOT NULL,
     soil_type VARCHAR(100) NOT NULL,
@@ -77,6 +78,9 @@ CREATE TABLE tractor (
     tire_width_mm DOUBLE PRECISION,
     tire_diameter_mm DOUBLE PRECISION,
     tire_pressure_psi DOUBLE PRECISION,
+    price_usd DOUBLE PRECISION,
+    fuel_consumption_lph DOUBLE PRECISION,
+    maintenance_cost_per_hour DOUBLE PRECISION,
     status VARCHAR(20) DEFAULT 'available',
     registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -208,10 +212,10 @@ INSERT INTO users (name, email, password, role_id, status) VALUES
 ('Demo User', 'demo@maqagr.com', '$2b$10$sample_hash_bcrypt', 2, 'active');
 
 -- Insert sample tractors
-INSERT INTO tractor (name, brand, model, engine_power_hp, weight_kg, traction_force_kn, traction_type, tire_type, status) VALUES
-('John Deere 5075E', 'John Deere', '5075E', 75, 3200, 45, '4x4', 'Radial 16.9R30', 'available'),
-('Massey Ferguson 4709', 'Massey Ferguson', '4709', 90, 3500, 52, '4x4', 'Radial 18.4R34', 'available'),
-('New Holland TT3.55', 'New Holland', 'TT3.55', 55, 2800, 38, '4x2', 'Diagonal 14.9-28', 'available');
+INSERT INTO tractor (name, brand, model, engine_power_hp, weight_kg, traction_force_kn, traction_type, tire_type, price_usd, fuel_consumption_lph, maintenance_cost_per_hour, status) VALUES
+('John Deere 5075E', 'John Deere', '5075E', 75, 3200, 45, '4x4', 'Radial 16.9R30', 35000, 12.5, 5.0, 'available'),
+('Massey Ferguson 4709', 'Massey Ferguson', '4709', 90, 3500, 52, '4x4', 'Radial 18.4R34', 42000, 15.0, 6.5, 'available'),
+('New Holland TT3.55', 'New Holland', 'TT3.55', 55, 2800, 38, '4x2', 'Diagonal 14.9-28', 25000, 9.8, 4.2, 'available');
 
 -- Insert sample implements
 INSERT INTO implement (implement_name, brand, power_requirement_hp, working_width_m, soil_type, implement_type, status) VALUES

@@ -1,12 +1,13 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   generateRecommendation,
+  generateAdvancedRecommendation,
   getRecommendationHistory,
-  getRecommendationById
-} from '../controllers/recommendationController.js';
-import { verifyTokenMiddleware } from '../middleware/auth.middleware.js';
+  getRecommendationById,
+} from "../controllers/recommendationController.js";
+import { verifyTokenMiddleware } from "../middleware/auth.middleware.js";
 
-import { cacheMiddleware } from '../middleware/cache.middleware.js';
+import { cacheMiddleware } from "../middleware/cache.middleware.js";
 
 const router = Router();
 
@@ -20,7 +21,7 @@ const router = Router();
  *     summary: Generar recomendaciones de tractores
  *     description: |
  *       Genera recomendaciones inteligentes de tractores para un terreno e implemento específicos.
- *       
+ *
  *       **Flujo del algoritmo de recomendación:**
  *       1. Valida ownership del terreno (debe pertenecer al usuario autenticado)
  *       2. Calcula la potencia mínima requerida para el implemento en el terreno
@@ -33,7 +34,7 @@ const router = Router();
  *          - ✅ **Disponibilidad**: Estado del tractor
  *       5. Retorna top 5 tractores rankeados con explicaciones detalladas
  *       6. Persiste las top 3 recomendaciones en la base de datos
- *       
+ *
  *       **Clasificaciones posibles:**
  *       - 🟢 OPTIMAL: Ajuste perfecto de potencia
  *       - 🟡 GOOD: Buen balance potencia/necesidad
@@ -136,7 +137,77 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/generate', verifyTokenMiddleware, generateRecommendation);
+router.post("/generate", verifyTokenMiddleware, generateRecommendation);
+
+/**
+ * @swagger
+ * /api/recommendations/advanced:
+ *   post:
+ *     summary: Generar recomendaciones avanzadas con filtros de usuario
+ *     description: |
+ *       Genera recomendaciones usando el algoritmo mejorado con filtros personalizables:
+ *       - Filtro estricto por presupuesto máximo (`budget`).
+ *       - Preferencia de marca elegida (`brandPreference`).
+ *       - Pesos customizables para evaluar: adecuación de potencia, precio, preferencia de marca y eficiencia de combustible.
+ *     tags: [Recommendations]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - terrain_id
+ *               - implement_id
+ *             properties:
+ *               terrain_id:
+ *                 type: integer
+ *               implement_id:
+ *                 type: integer
+ *               filters:
+ *                 type: object
+ *                 properties:
+ *                   budget:
+ *                     type: number
+ *                   brandPreference:
+ *                     type: string
+ *               customWeights:
+ *                 type: object
+ *                 properties:
+ *                   power_match:
+ *                     type: number
+ *                   price:
+ *                     type: number
+ *                   brand_preference:
+ *                     type: number
+ *                   fuel_efficiency:
+ *                     type: number
+ *           example:
+ *             terrain_id: 1
+ *             implement_id: 2
+ *             filters:
+ *               budget: 50000
+ *               brandPreference: "John Deere"
+ *             customWeights:
+ *               power_match: 40
+ *               price: 30
+ *               brand_preference: 20
+ *               fuel_efficiency: 10
+ *     responses:
+ *       200:
+ *         description: Recomendaciones avanzadas generadas exitosamente
+ *       400:
+ *         description: Campos requeridos faltantes
+ *       401:
+ *         description: Usuario no autenticado
+ *       404:
+ *         description: Terreno o implemento no encontrado
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.post("/advanced", verifyTokenMiddleware, generateAdvancedRecommendation);
 
 /**
  * @swagger
@@ -213,7 +284,12 @@ router.post('/generate', verifyTokenMiddleware, generateRecommendation);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/history', verifyTokenMiddleware, cacheMiddleware(3600), getRecommendationHistory);
+router.get(
+  "/history",
+  verifyTokenMiddleware,
+  cacheMiddleware(3600),
+  getRecommendationHistory,
+);
 
 /**
  * @swagger
@@ -309,6 +385,6 @@ router.get('/history', verifyTokenMiddleware, cacheMiddleware(3600), getRecommen
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/:id', verifyTokenMiddleware, getRecommendationById);
+router.get("/:id", verifyTokenMiddleware, getRecommendationById);
 
 export default router;
