@@ -17,6 +17,7 @@ jest.unstable_mockModule('../../src/middleware/auth.middleware.js', () => ({
         req.user = { id: 1, role_id: 1 };
         next();
     }),
+    requireRole: jest.fn(() => (req, res, next) => next()),
     isAdmin: jest.fn((req, res, next) => next()),
 }));
 

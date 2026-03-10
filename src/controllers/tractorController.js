@@ -2,7 +2,13 @@ import Tractor from '../models/Tractor.js';
 import { asyncHandler } from '../middleware/error.middleware.js';
 
 const applyPagination = (items, paginationParams) => {
-  const { limit, offset, sort, order, page } = paginationParams;
+  const {
+    limit = 10,
+    offset = 0,
+    sort = null,
+    order = 'asc',
+    page = 1,
+  } = paginationParams || {};
 
   // Ordenamiento dinámico
   if (sort && items.length > 0 && items[0].hasOwnProperty(sort)) {

@@ -1,10 +1,19 @@
 import { Router } from 'express';
 import redisClient from '../config/redis.js';
-import { verifyTokenMiddleware, isAdmin } from '../middleware/auth.middleware.js';
+import { verifyTokenMiddleware, requireRole } from '../middleware/auth.middleware.js';
+import {
+    getOverviewStats,
+    getRecommendationStats,
+    getUserStats
+} from '../controllers/adminController.js';
 
 const router = Router();
 
-router.get('/cache/stats', verifyTokenMiddleware, isAdmin, async (req, res) => {
+router.get('/stats/overview', verifyTokenMiddleware, requireRole('admin'), getOverviewStats);
+router.get('/stats/recommendations', verifyTokenMiddleware, requireRole('admin'), getRecommendationStats);
+router.get('/stats/users', verifyTokenMiddleware, requireRole('admin'), getUserStats);
+
+router.get('/cache/stats', verifyTokenMiddleware, requireRole('admin'), async (req, res) => {
     try {
         const start = Date.now();
         // Use INFO command to get stats
