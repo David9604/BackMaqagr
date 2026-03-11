@@ -20,6 +20,7 @@ import Implement from '../models/Implement.js';
 import Recommendation from '../models/Recommendation.js';
 import { generateRecommendation as generateRec, analyzeTerrain } from '../services/recommendationService.js';
 import { calculateMinimumPower } from '../services/minimumPowerService.js';
+import { notifyRecommendationCreated } from '../services/notificationService.js';
 import { asyncHandler } from '../middleware/error.middleware.js';
 
 // CONSTANTES
@@ -361,6 +362,11 @@ export const generateRecommendation = asyncHandler(async (req, res) => {
     
     // Confirmar transacción
     await client.query('COMMIT');
+
+    // Emitir notificación asíncrona sin bloquear la respuesta
+    notifyRecommendationCreated(user_id, queryId).catch(err => 
+      console.error('Error no crítico enviando notificación:', err)
+    );
     
     // 9. Respuesta exitosa
     res.status(200).json({

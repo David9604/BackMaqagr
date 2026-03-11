@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import redisClient from '../config/redis.js';
 import { verifyTokenMiddleware, isAdmin } from '../middleware/auth.middleware.js';
+import { notifySystemMaintenance } from '../services/notificationService.js';
+import { successResponse } from '../utils/response.util.js';
 
 const router = Router();
 
@@ -33,6 +35,26 @@ router.get('/cache/stats', verifyTokenMiddleware, isAdmin, async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ message: 'Error fetching cache stats', error: error.message });
+    }
+});
+
+router.post('/notifications/broadcast', verifyTokenMiddleware, isAdmin, async (req, res) => {
+    try {
+        const { userIds, title, message } = req.body;
+        
+        if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+            return res.status(400).json({ message: 'Se requiere un array de userIds' });
+        }
+
+        if (!title || !message) {
+            return res.status(400).json({ message: 'El título y el mensaje son requeridos' });
+        }
+
+        const count = await notifySystemMaintenance(userIds, title, message);
+        
+        return successResponse(res, { count }, `Notificación enviada a ${count} usuarios`);
+    } catch (error) {
+        res.status(500).json({ message: 'Error enviando notificaciones masivas', error: error.message });
     }
 });
 

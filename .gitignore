@@ -115,6 +115,11 @@ temp/
 test-results/
 src/test-models.js
 
+# ─── Agent / Skills ──────────────────────────────────────────────────────────
+skills-lock.json
+.agent
+.agents/
+
 # Personal documentation files
 ASIGNACION_TAREAS.md
 PLAN_DESARROLLO.md
