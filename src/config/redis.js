@@ -25,7 +25,7 @@ redisClient.on('connect', () => {
 redisClient.on('error', (err) => {
   // Suppress error logging during tests if connection is expected to fail or be mocked
   if (process.env.NODE_ENV !== 'test') {
-    console.error('Redis client error:', err);
+    console.error('Redis client error (Connection may be unavailable):', err.message);
   }
 });
 
@@ -35,13 +35,15 @@ export const connectRedis = async () => {
     await redisClient.connect();
     console.log('Redis connection verified');
   } catch (error) {
-    console.error('Failed to connect to Redis:', error);
+    console.warn('Failed to connect to Redis initially. The app will continue, but cache features will be unavailable.', error.message);
   }
 };
 
 export const disconnectRedis = async () => {
   if (redisClient) {
-    await redisClient.quit();
+    try {
+      await redisClient.quit();
+    } catch(e) {}
     console.log('Redis client disconnected');
   }
 };
