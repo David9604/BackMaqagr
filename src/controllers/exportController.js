@@ -34,8 +34,8 @@ export const exportTractorsCatalog = asyncHandler(async (req, res) => {
       t.name,
       t.brand,
       t.engine_power_hp AS power,
-      EXTRACT(YEAR FROM t.registration_date)::int AS year,
-      NULL::text AS price
+      COALESCE(t.model_year, EXTRACT(YEAR FROM t.registration_date)::int) AS year,
+      t.price
     FROM tractor t
     ORDER BY t.brand ASC, t.model ASC
   `);

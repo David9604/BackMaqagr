@@ -1,6 +1,14 @@
-import { pool } from '../config/db.js';
+import { Op, col, fn, literal } from 'sequelize';
 import redisClient from '../config/redis.js';
 import { asyncHandler } from '../middleware/error.middleware.js';
+import {
+  AnalyticsUser,
+  AnalyticsTractor,
+  AnalyticsImplement,
+  AnalyticsTerrain,
+  AnalyticsQuery,
+  AnalyticsRecommendation,
+} from '../models/adminAnalytics.models.js';
 
 const OVERVIEW_CACHE_KEY = 'cache:admin:stats:overview:v1';
 const OVERVIEW_CACHE_TTL_SECONDS = 3600; // 1 hora
@@ -8,6 +16,7 @@ const OVERVIEW_CACHE_TTL_SECONDS = 3600; // 1 hora
 const toInteger = (value) => parseInt(value, 10) || 0;
 const toFloat = (value) => Number.parseFloat(value) || 0;
 const canUseRedisCache = () => redisClient && redisClient.status === 'ready';
+const roundToTwoDecimals = (value) => Number(toFloat(value).toFixed(2));
 
 const toChartData = (rows) => ({
   labels: rows.map((row) => row.label),
@@ -16,6 +25,47 @@ const toChartData = (rows) => ({
     label: row.label,
     value: toFloat(row.value),
   })),
+});
+
+const getLast30DaysStart = () => {
+  const start = new Date();
+  start.setUTCHours(0, 0, 0, 0);
+  start.setUTCDate(start.getUTCDate() - 29);
+  return start;
+};
+
+const fillDailySeries = (rows) => {
+  const indexedRows = new Map(
+    rows.map((row) => [row.label, toFloat(row.value)]),
+  );
+  const data = [];
+  const cursor = getLast30DaysStart();
+
+  for (let index = 0; index < 30; index += 1) {
+    const label = cursor.toISOString().slice(0, 10);
+    data.push({
+      label,
+      value: indexedRows.get(label) || 0,
+    });
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  return toChartData(data);
+};
+
+const getTrendRows = async (bucket, format) => AnalyticsQuery.findAll({
+  attributes: [
+    [fn('TO_CHAR', bucket, format), 'label'],
+    [fn('SUM', literal('1')), 'value'],
+  ],
+  where: {
+    query_date: {
+      [Op.gte]: getLast30DaysStart(),
+    },
+  },
+  group: [bucket],
+  order: [[bucket, 'ASC']],
+  raw: true,
 });
 
 const getOverviewCache = async () => {
@@ -55,75 +105,47 @@ export const getOverviewStats = asyncHandler(async (req, res) => {
     return res.status(200).json(cachedResponse);
   }
 
-  const totalsQuery = `
-    WITH users_agg AS (
-      SELECT
-        COUNT(*)::int AS total_users,
-        COUNT(*) FILTER (WHERE status = 'active')::int AS active_users,
-        COUNT(*) FILTER (WHERE status <> 'active')::int AS inactive_users
-      FROM users
-    )
-    SELECT
-      users_agg.total_users,
-      users_agg.active_users,
-      users_agg.inactive_users,
-      (SELECT COUNT(*)::int FROM tractor) AS total_tractors,
-      (SELECT COUNT(*)::int FROM implement) AS total_implements,
-      (SELECT COUNT(*)::int FROM terrain) AS total_terrains,
-      (SELECT COUNT(*)::int FROM query) AS total_queries,
-      (SELECT COUNT(*)::int FROM recommendation) AS total_recommendations
-    FROM users_agg
-  `;
+  const dayBucket = fn('DATE_TRUNC', 'day', col('query_date'));
+  const weekBucket = fn('DATE_TRUNC', 'week', col('query_date'));
+  const monthBucket = fn('DATE_TRUNC', 'month', col('query_date'));
 
-  const queriesByDayQuery = `
-    SELECT
-      TO_CHAR(day_bucket, 'YYYY-MM-DD') AS label,
-      COALESCE(day_data.total, 0)::int AS value
-    FROM GENERATE_SERIES(
-      DATE_TRUNC('day', CURRENT_DATE - INTERVAL '29 days'),
-      DATE_TRUNC('day', CURRENT_DATE),
-      INTERVAL '1 day'
-    ) AS day_bucket
-    LEFT JOIN (
-      SELECT
-        DATE_TRUNC('day', query_date) AS bucket,
-        COUNT(*)::int AS total
-      FROM query
-      WHERE query_date >= CURRENT_DATE - INTERVAL '29 days'
-      GROUP BY DATE_TRUNC('day', query_date)
-    ) AS day_data
-      ON day_data.bucket = day_bucket
-    ORDER BY day_bucket
-  `;
-
-  const queriesByWeekQuery = `
-    SELECT
-      TO_CHAR(DATE_TRUNC('week', query_date), 'IYYY-IW') AS label,
-      COUNT(*)::int AS value
-    FROM query
-    WHERE query_date >= CURRENT_DATE - INTERVAL '30 days'
-    GROUP BY DATE_TRUNC('week', query_date)
-    ORDER BY DATE_TRUNC('week', query_date)
-  `;
-
-  const queriesByMonthQuery = `
-    SELECT
-      TO_CHAR(DATE_TRUNC('month', query_date), 'YYYY-MM') AS label,
-      COUNT(*)::int AS value
-    FROM query
-    WHERE query_date >= CURRENT_DATE - INTERVAL '30 days'
-    GROUP BY DATE_TRUNC('month', query_date)
-    ORDER BY DATE_TRUNC('month', query_date)
-  `;
-
-  const [totalsResult, byDayResult, byWeekResult, byMonthResult] = await Promise.all([
-    pool.query(totalsQuery),
-    pool.query(queriesByDayQuery),
-    pool.query(queriesByWeekQuery),
-    pool.query(queriesByMonthQuery),
+  const [
+    usersByStatus,
+    totalTractors,
+    totalImplements,
+    totalTerrains,
+    totalQueries,
+    totalRecommendations,
+    byDayRows,
+    byWeekRows,
+    byMonthRows,
+  ] = await Promise.all([
+    AnalyticsUser.findAll({
+      attributes: [
+        'status',
+        [fn('COUNT', col('user_id')), 'value'],
+      ],
+      group: ['status'],
+      raw: true,
+    }),
+    AnalyticsTractor.count(),
+    AnalyticsImplement.count(),
+    AnalyticsTerrain.count(),
+    AnalyticsQuery.count(),
+    AnalyticsRecommendation.count(),
+    getTrendRows(dayBucket, 'YYYY-MM-DD'),
+    getTrendRows(weekBucket, 'IYYY-IW'),
+    getTrendRows(monthBucket, 'YYYY-MM'),
   ]);
 
-  const totals = totalsResult.rows[0];
+  const activeUsers = usersByStatus.reduce(
+    (total, row) => total + (row.status === 'active' ? toInteger(row.value) : 0),
+    0,
+  );
+  const totalUsers = usersByStatus.reduce(
+    (total, row) => total + toInteger(row.value),
+    0,
+  );
 
   const response = {
     success: true,
@@ -131,20 +153,20 @@ export const getOverviewStats = asyncHandler(async (req, res) => {
     data: {
       totals: {
         users: {
-          total: toInteger(totals.total_users),
-          active: toInteger(totals.active_users),
-          inactive: toInteger(totals.inactive_users),
+          total: totalUsers,
+          active: activeUsers,
+          inactive: totalUsers - activeUsers,
         },
-        tractors: toInteger(totals.total_tractors),
-        implements: toInteger(totals.total_implements),
-        terrains: toInteger(totals.total_terrains),
-        queries: toInteger(totals.total_queries),
-        recommendations: toInteger(totals.total_recommendations),
+        tractors: totalTractors,
+        implements: totalImplements,
+        terrains: totalTerrains,
+        queries: totalQueries,
+        recommendations: totalRecommendations,
       },
       queriesTrend: {
-        byDay: toChartData(byDayResult.rows),
-        byWeek: toChartData(byWeekResult.rows),
-        byMonth: toChartData(byMonthResult.rows),
+        byDay: fillDailySeries(byDayRows),
+        byWeek: toChartData(byWeekRows),
+        byMonth: toChartData(byMonthRows),
       },
       cacheTTLSeconds: OVERVIEW_CACHE_TTL_SECONDS,
       generatedAt: new Date().toISOString(),
@@ -157,94 +179,141 @@ export const getOverviewStats = asyncHandler(async (req, res) => {
 });
 
 export const getRecommendationStats = asyncHandler(async (req, res) => {
-  const topTractorsQuery = `
-    SELECT
-      tr.tractor_id AS id,
-      tr.name,
-      tr.brand,
-      tr.model,
-      COUNT(r.recommendation_id)::int AS value
-    FROM recommendation r
-    INNER JOIN tractor tr ON tr.tractor_id = r.tractor_id
-    GROUP BY tr.tractor_id, tr.name, tr.brand, tr.model
-    ORDER BY value DESC, tr.name ASC
-    LIMIT 10
+  const powerRangeLabel = `
+    CASE
+      WHEN "tractor"."engine_power_hp" < 60 THEN '0-59 HP'
+      WHEN "tractor"."engine_power_hp" BETWEEN 60 AND 99 THEN '60-99 HP'
+      WHEN "tractor"."engine_power_hp" BETWEEN 100 AND 149 THEN '100-149 HP'
+      WHEN "tractor"."engine_power_hp" BETWEEN 150 AND 199 THEN '150-199 HP'
+      ELSE '200+ HP'
+    END
   `;
-
-  const topImplementsQuery = `
-    SELECT
-      i.implement_id AS id,
-      i.implement_name AS name,
-      i.brand,
-      i.implement_type,
-      COUNT(r.recommendation_id)::int AS value
-    FROM recommendation r
-    INNER JOIN implement i ON i.implement_id = r.implement_id
-    GROUP BY i.implement_id, i.implement_name, i.brand, i.implement_type
-    ORDER BY value DESC, i.implement_name ASC
-    LIMIT 10
-  `;
-
-  const terrainDistributionQuery = `
-    SELECT
-      COALESCE(t.soil_type, 'Sin tipo') AS label,
-      COUNT(r.recommendation_id)::int AS value
-    FROM recommendation r
-    LEFT JOIN terrain t ON t.terrain_id = r.terrain_id
-    GROUP BY COALESCE(t.soil_type, 'Sin tipo')
-    ORDER BY value DESC, label ASC
-  `;
-
-  const powerRangeDistributionQuery = `
-    SELECT
-      bucket_label AS label,
-      COUNT(*)::int AS value
-    FROM (
-      SELECT
-        CASE
-          WHEN tr.engine_power_hp < 60 THEN '0-59 HP'
-          WHEN tr.engine_power_hp BETWEEN 60 AND 99 THEN '60-99 HP'
-          WHEN tr.engine_power_hp BETWEEN 100 AND 149 THEN '100-149 HP'
-          WHEN tr.engine_power_hp BETWEEN 150 AND 199 THEN '150-199 HP'
-          ELSE '200+ HP'
-        END AS bucket_label,
-        CASE
-          WHEN tr.engine_power_hp < 60 THEN 1
-          WHEN tr.engine_power_hp BETWEEN 60 AND 99 THEN 2
-          WHEN tr.engine_power_hp BETWEEN 100 AND 149 THEN 3
-          WHEN tr.engine_power_hp BETWEEN 150 AND 199 THEN 4
-          ELSE 5
-        END AS bucket_order
-      FROM recommendation r
-      INNER JOIN tractor tr ON tr.tractor_id = r.tractor_id
-    ) AS bucketed
-    GROUP BY bucket_label, bucket_order
-    ORDER BY bucket_order
-  `;
-
-  const averagePowerQuery = `
-    SELECT
-      COALESCE(ROUND(AVG(tr.engine_power_hp)::numeric, 2), 0)::float AS average_power_hp
-    FROM recommendation r
-    INNER JOIN tractor tr ON tr.tractor_id = r.tractor_id
+  const powerRangeOrder = `
+    CASE
+      WHEN "tractor"."engine_power_hp" < 60 THEN 1
+      WHEN "tractor"."engine_power_hp" BETWEEN 60 AND 99 THEN 2
+      WHEN "tractor"."engine_power_hp" BETWEEN 100 AND 149 THEN 3
+      WHEN "tractor"."engine_power_hp" BETWEEN 150 AND 199 THEN 4
+      ELSE 5
+    END
   `;
 
   const [
-    topTractorsResult,
-    topImplementsResult,
-    terrainDistributionResult,
-    powerRangeDistributionResult,
-    averagePowerResult,
+    topTractorsRows,
+    topImplementsRows,
+    terrainDistributionRows,
+    powerRangeDistributionRows,
+    averagePowerRow,
   ] = await Promise.all([
-    pool.query(topTractorsQuery),
-    pool.query(topImplementsQuery),
-    pool.query(terrainDistributionQuery),
-    pool.query(powerRangeDistributionQuery),
-    pool.query(averagePowerQuery),
+    AnalyticsRecommendation.findAll({
+      attributes: [
+        'tractor_id',
+        [col('tractor.name'), 'name'],
+        [col('tractor.brand'), 'brand'],
+        [col('tractor.model'), 'model'],
+        [fn('COUNT', col('AnalyticsRecommendation.recommendation_id')), 'value'],
+      ],
+      include: [
+        {
+          model: AnalyticsTractor,
+          as: 'tractor',
+          attributes: [],
+          required: true,
+        },
+      ],
+      group: [
+        'AnalyticsRecommendation.tractor_id',
+        'tractor.tractor_id',
+        'tractor.name',
+        'tractor.brand',
+        'tractor.model',
+      ],
+      order: [literal('"value" DESC'), literal('"tractor"."name" ASC')],
+      limit: 10,
+      subQuery: false,
+      raw: true,
+    }),
+    AnalyticsRecommendation.findAll({
+      attributes: [
+        'implement_id',
+        [col('implement.implement_name'), 'name'],
+        [col('implement.brand'), 'brand'],
+        [col('implement.implement_type'), 'implement_type'],
+        [fn('COUNT', col('AnalyticsRecommendation.recommendation_id')), 'value'],
+      ],
+      include: [
+        {
+          model: AnalyticsImplement,
+          as: 'implement',
+          attributes: [],
+          required: true,
+        },
+      ],
+      group: [
+        'AnalyticsRecommendation.implement_id',
+        'implement.implement_id',
+        'implement.implement_name',
+        'implement.brand',
+        'implement.implement_type',
+      ],
+      order: [literal('"value" DESC'), literal('"implement"."implement_name" ASC')],
+      limit: 10,
+      subQuery: false,
+      raw: true,
+    }),
+    AnalyticsRecommendation.findAll({
+      attributes: [
+        [fn('COALESCE', col('terrain.soil_type'), 'Sin tipo'), 'label'],
+        [fn('COUNT', col('AnalyticsRecommendation.recommendation_id')), 'value'],
+      ],
+      include: [
+        {
+          model: AnalyticsTerrain,
+          as: 'terrain',
+          attributes: [],
+          required: false,
+        },
+      ],
+      group: [fn('COALESCE', col('terrain.soil_type'), 'Sin tipo')],
+      order: [literal('"value" DESC'), literal('"label" ASC')],
+      raw: true,
+    }),
+    AnalyticsRecommendation.findAll({
+      attributes: [
+        [literal(powerRangeLabel), 'label'],
+        [literal(powerRangeOrder), 'bucket_order'],
+        [fn('COUNT', col('AnalyticsRecommendation.recommendation_id')), 'value'],
+      ],
+      include: [
+        {
+          model: AnalyticsTractor,
+          as: 'tractor',
+          attributes: [],
+          required: true,
+        },
+      ],
+      group: [literal(powerRangeLabel), literal(powerRangeOrder)],
+      order: [literal('bucket_order ASC')],
+      raw: true,
+    }),
+    AnalyticsRecommendation.findOne({
+      attributes: [
+        [fn('AVG', col('tractor.engine_power_hp')), 'average_power_hp'],
+      ],
+      include: [
+        {
+          model: AnalyticsTractor,
+          as: 'tractor',
+          attributes: [],
+          required: true,
+        },
+      ],
+      raw: true,
+    }),
   ]);
 
-  const topTractors = topTractorsResult.rows.map((row) => ({
-    id: toInteger(row.id),
+  const topTractors = topTractorsRows.map((row) => ({
+    id: toInteger(row.tractor_id),
     name: row.name,
     brand: row.brand,
     model: row.model,
@@ -252,8 +321,8 @@ export const getRecommendationStats = asyncHandler(async (req, res) => {
     label: `${row.brand} ${row.model}`,
   }));
 
-  const topImplements = topImplementsResult.rows.map((row) => ({
-    id: toInteger(row.id),
+  const topImplements = topImplementsRows.map((row) => ({
+    id: toInteger(row.implement_id),
     name: row.name,
     brand: row.brand,
     type: row.implement_type,
@@ -275,9 +344,9 @@ export const getRecommendationStats = asyncHandler(async (req, res) => {
         series: topImplements.map((row) => row.value),
         data: topImplements,
       },
-      terrainDistribution: toChartData(terrainDistributionResult.rows),
-      powerRangeDistribution: toChartData(powerRangeDistributionResult.rows),
-      averageRecommendedPowerHp: toFloat(averagePowerResult.rows[0].average_power_hp),
+      terrainDistribution: toChartData(terrainDistributionRows),
+      powerRangeDistribution: toChartData(powerRangeDistributionRows),
+      averageRecommendedPowerHp: roundToTwoDecimals(averagePowerRow?.average_power_hp),
       generatedAt: new Date().toISOString(),
     },
   };
@@ -286,69 +355,55 @@ export const getRecommendationStats = asyncHandler(async (req, res) => {
 });
 
 export const getUserStats = asyncHandler(async (req, res) => {
-  const usersByMonthQuery = `
-    SELECT
-      TO_CHAR(DATE_TRUNC('month', registration_date), 'YYYY-MM') AS label,
-      COUNT(*)::int AS value
-    FROM users
-    GROUP BY DATE_TRUNC('month', registration_date)
-    ORDER BY DATE_TRUNC('month', registration_date)
-  `;
+  const monthBucket = fn('DATE_TRUNC', 'month', col('registration_date'));
 
-  const usersMetricsQuery = `
-    WITH user_queries AS (
-      SELECT
-        u.user_id,
-        COUNT(q.query_id)::int AS total_queries
-      FROM users u
-      LEFT JOIN query q ON q.user_id = u.user_id
-      GROUP BY u.user_id
-    ),
-    user_terrains AS (
-      SELECT
-        u.user_id,
-        COUNT(t.terrain_id)::int AS total_terrains
-      FROM users u
-      LEFT JOIN terrain t ON t.user_id = u.user_id
-      GROUP BY u.user_id
-    ),
-    combined AS (
-      SELECT
-        q.user_id,
-        q.total_queries,
-        COALESCE(t.total_terrains, 0)::int AS total_terrains
-      FROM user_queries q
-      LEFT JOIN user_terrains t ON t.user_id = q.user_id
-    )
-    SELECT
-      COUNT(*)::int AS total_users,
-      COUNT(*) FILTER (WHERE total_queries > 0)::int AS active_users,
-      COUNT(*) FILTER (WHERE total_queries = 0)::int AS inactive_users,
-      COALESCE(ROUND(AVG(total_terrains)::numeric, 2), 0)::float AS avg_terrains_per_user,
-      COALESCE(ROUND(AVG(total_queries)::numeric, 2), 0)::float AS avg_queries_per_user
-    FROM combined
-  `;
-
-  const [usersByMonthResult, usersMetricsResult] = await Promise.all([
-    pool.query(usersByMonthQuery),
-    pool.query(usersMetricsQuery),
+  const [
+    usersByMonthRows,
+    totalUsers,
+    totalTerrains,
+    totalQueries,
+    activeUsersByQuery,
+  ] = await Promise.all([
+    AnalyticsUser.findAll({
+      attributes: [
+        [fn('TO_CHAR', monthBucket, 'YYYY-MM'), 'label'],
+        [fn('COUNT', col('user_id')), 'value'],
+      ],
+      group: [monthBucket],
+      order: [[monthBucket, 'ASC']],
+      raw: true,
+    }),
+    AnalyticsUser.count(),
+    AnalyticsTerrain.count(),
+    AnalyticsQuery.count(),
+    AnalyticsQuery.findAll({
+      attributes: [
+        'user_id',
+        [fn('COUNT', col('query_id')), 'value'],
+      ],
+      group: ['user_id'],
+      raw: true,
+    }),
   ]);
 
-  const metrics = usersMetricsResult.rows[0];
+  const activeUsers = activeUsersByQuery.length;
+  const inactiveUsers = totalUsers - activeUsers;
+  const terrainsPerUser = totalUsers > 0 ? totalTerrains / totalUsers : 0;
+  const queriesPerUser = totalUsers > 0 ? totalQueries / totalUsers : 0;
 
   const response = {
     success: true,
     message: 'Estadísticas de usuarios obtenidas exitosamente',
     data: {
-      usersRegisteredByMonth: toChartData(usersByMonthResult.rows),
+      usersRegisteredByMonth: toChartData(usersByMonthRows),
       users: {
-        total: toInteger(metrics.total_users),
-        active: toInteger(metrics.active_users),
-        inactive: toInteger(metrics.inactive_users),
+        total: totalUsers,
+        active: activeUsers,
+        inactive: inactiveUsers,
       },
       averages: {
-        terrainsPerUser: toFloat(metrics.avg_terrains_per_user),
-        queriesPerUser: toFloat(metrics.avg_queries_per_user),
+        terrainsPerUser: roundToTwoDecimals(terrainsPerUser),
+        queriesPerUser: roundToTwoDecimals(queriesPerUser),
       },
       generatedAt: new Date().toISOString(),
     },

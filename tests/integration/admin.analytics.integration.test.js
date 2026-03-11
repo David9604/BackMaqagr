@@ -158,6 +158,26 @@ describe('Admin Analytics - Integración', () => {
       expect(res.body.success).toBe(false);
       expect(res.body.message).toMatch(/admin/i);
     });
+
+    it('debe rechazar usuario no admin en /admin/stats/recommendations', async () => {
+      const res = await request
+        .get('/api/admin/stats/recommendations')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toMatch(/admin/i);
+    });
+
+    it('debe rechazar usuario no admin en /admin/stats/users', async () => {
+      const res = await request
+        .get('/api/admin/stats/users')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toMatch(/admin/i);
+    });
   });
 
   describe('GET /api/admin/stats/overview', () => {
@@ -183,6 +203,7 @@ describe('Admin Analytics - Integración', () => {
       expect(res.body.data.queriesTrend.byDay.series.length).toBe(30);
       expect(Array.isArray(res.body.data.queriesTrend.byWeek.data)).toBe(true);
       expect(Array.isArray(res.body.data.queriesTrend.byMonth.data)).toBe(true);
+      expect(res.body.data.cacheTTLSeconds).toBe(3600);
       expect(res.body.data).toHaveProperty('generatedAt');
     });
   });

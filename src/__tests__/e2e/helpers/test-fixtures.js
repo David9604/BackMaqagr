@@ -95,7 +95,9 @@ export class TestDataFactory {
       name: overrides.name || `Tractor Test ${timestamp}`,
       brand: overrides.brand || 'TestBrand',
       model: overrides.model || `Model_${timestamp}`,
+      model_year: overrides.model_year || 2025,
       engine_power_hp: overrides.engine_power_hp || 85,
+      price: overrides.price || 95000,
       weight_kg: overrides.weight_kg || 3500,
       traction_force_kn: overrides.traction_force_kn || 35.0,
       traction_type: overrides.traction_type || '4x4'
@@ -103,21 +105,47 @@ export class TestDataFactory {
 
     const tractor = { ...defaults, ...overrides };
 
-    const result = await pool.query(
-      `INSERT INTO tractor 
-       (name, brand, model, engine_power_hp, weight_kg, traction_force_kn, traction_type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
-      [
-        tractor.name,
-        tractor.brand,
-        tractor.model,
-        tractor.engine_power_hp,
-        tractor.weight_kg,
-        tractor.traction_force_kn,
-        tractor.traction_type
-      ]
-    );
+    let result;
+
+    try {
+      result = await pool.query(
+        `INSERT INTO tractor 
+         (name, brand, model, model_year, engine_power_hp, price, weight_kg, traction_force_kn, traction_type)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         RETURNING *`,
+        [
+          tractor.name,
+          tractor.brand,
+          tractor.model,
+          tractor.model_year,
+          tractor.engine_power_hp,
+          tractor.price,
+          tractor.weight_kg,
+          tractor.traction_force_kn,
+          tractor.traction_type
+        ]
+      );
+    } catch (error) {
+      if (error.code !== '42703') {
+        throw error;
+      }
+
+      result = await pool.query(
+        `INSERT INTO tractor 
+         (name, brand, model, engine_power_hp, weight_kg, traction_force_kn, traction_type)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING *`,
+        [
+          tractor.name,
+          tractor.brand,
+          tractor.model,
+          tractor.engine_power_hp,
+          tractor.weight_kg,
+          tractor.traction_force_kn,
+          tractor.traction_type
+        ]
+      );
+    }
 
     return result.rows[0];
   }

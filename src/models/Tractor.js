@@ -21,7 +21,9 @@ class Tractor {
       name,
       brand,
       model,
+      model_year = null,
       engine_power_hp,
+      price = null,
       weight_kg,
       traction_force_kn,
       traction_type,
@@ -34,17 +36,17 @@ class Tractor {
 
     const query = `
       INSERT INTO tractor (
-        name, brand, model, engine_power_hp, weight_kg, traction_force_kn,
-        traction_type, tire_type, tire_width_mm, tire_diameter_mm,
-        tire_pressure_psi, status
+        name, brand, model, model_year, engine_power_hp, price, weight_kg,
+        traction_force_kn, traction_type, tire_type, tire_width_mm,
+        tire_diameter_mm, tire_pressure_psi, status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *
     `;
     const values = [
-      name, brand, model, engine_power_hp, weight_kg, traction_force_kn,
-      traction_type, tire_type, tire_width_mm, tire_diameter_mm,
-      tire_pressure_psi, status
+      name, brand, model, model_year, engine_power_hp, price, weight_kg,
+      traction_force_kn, traction_type, tire_type, tire_width_mm,
+      tire_diameter_mm, tire_pressure_psi, status
     ];
     const result = await pool.query(query, values);
     return result.rows[0];
@@ -56,7 +58,9 @@ class Tractor {
       name,
       brand,
       model,
+      model_year,
       engine_power_hp,
+      price,
       weight_kg,
       traction_force_kn,
       traction_type,
@@ -72,22 +76,24 @@ class Tractor {
       SET name = COALESCE($1, name),
           brand = COALESCE($2, brand),
           model = COALESCE($3, model),
-          engine_power_hp = COALESCE($4, engine_power_hp),
-          weight_kg = COALESCE($5, weight_kg),
-          traction_force_kn = COALESCE($6, traction_force_kn),
-          traction_type = COALESCE($7, traction_type),
-          tire_type = COALESCE($8, tire_type),
-          tire_width_mm = COALESCE($9, tire_width_mm),
-          tire_diameter_mm = COALESCE($10, tire_diameter_mm),
-          tire_pressure_psi = COALESCE($11, tire_pressure_psi),
-          status = COALESCE($12, status)
-      WHERE tractor_id = $13
+          model_year = COALESCE($4, model_year),
+          engine_power_hp = COALESCE($5, engine_power_hp),
+          price = COALESCE($6, price),
+          weight_kg = COALESCE($7, weight_kg),
+          traction_force_kn = COALESCE($8, traction_force_kn),
+          traction_type = COALESCE($9, traction_type),
+          tire_type = COALESCE($10, tire_type),
+          tire_width_mm = COALESCE($11, tire_width_mm),
+          tire_diameter_mm = COALESCE($12, tire_diameter_mm),
+          tire_pressure_psi = COALESCE($13, tire_pressure_psi),
+          status = COALESCE($14, status)
+      WHERE tractor_id = $15
       RETURNING *
     `;
     const values = [
-      name, brand, model, engine_power_hp, weight_kg, traction_force_kn,
-      traction_type, tire_type, tire_width_mm, tire_diameter_mm,
-      tire_pressure_psi, status, id
+      name, brand, model, model_year, engine_power_hp, price, weight_kg,
+      traction_force_kn, traction_type, tire_type, tire_width_mm,
+      tire_diameter_mm, tire_pressure_psi, status, id
     ];
     const result = await pool.query(query, values);
     return result.rows[0];

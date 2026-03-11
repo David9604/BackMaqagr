@@ -7,7 +7,9 @@ export const validateTractor = (req, res, next) => {
   const {
     brand,
     model,
+    model_year,
     engine_power_hp,
+    price,
     weight_kg,
     fuel_tank_l,
     traction_type,
@@ -47,7 +49,9 @@ export const validateTractor = (req, res, next) => {
   }
 
   const positiveFields = [
+    { name: 'model_year', value: model_year },
     { name: 'engine_power_hp', value: engine_power_hp },
+    { name: 'price', value: price },
     { name: 'weight_kg', value: weight_kg },
     { name: 'fuel_tank_l', value: fuel_tank_l },
   ];
@@ -60,6 +64,13 @@ export const validateTractor = (req, res, next) => {
       }
     }
   });
+
+  if (model_year !== undefined && model_year !== null && `${model_year}`.trim() !== '') {
+    const yearNum = Number(model_year);
+    if (!Number.isInteger(yearNum) || yearNum < 1900 || yearNum > 2100) {
+      errors.push('model_year debe ser un año válido entre 1900 y 2100');
+    }
+  }
 
   if (traction_type !== undefined && traction_type !== null && `${traction_type}`.trim() !== '') {
     if (!ALLOWED_TRACTION_TYPES.includes(traction_type)) {

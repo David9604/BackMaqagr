@@ -25,3 +25,8 @@ global.console = {
 afterEach(() => {
   jest.clearAllMocks();
 });
+
+afterAll(async () => {
+  const { closeSequelize } = await import('../config/sequelize.js');
+  await closeSequelize();
+});

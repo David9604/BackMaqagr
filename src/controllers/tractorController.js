@@ -170,7 +170,9 @@ export const createTractor = asyncHandler(async (req, res) => {
     name,
     brand,
     model,
+    model_year,
     engine_power_hp,
+    price,
     weight_kg,
     traction_force_kn,
     traction_type,
@@ -185,9 +187,17 @@ export const createTractor = asyncHandler(async (req, res) => {
     name,
     brand,
     model,
+    model_year:
+      model_year !== undefined && model_year !== null
+        ? Number(model_year)
+        : undefined,
     engine_power_hp:
       engine_power_hp !== undefined && engine_power_hp !== null
         ? Number(engine_power_hp)
+        : undefined,
+    price:
+      price !== undefined && price !== null
+        ? Number(price)
         : undefined,
     weight_kg:
       weight_kg !== undefined && weight_kg !== null
@@ -245,7 +255,9 @@ export const updateTractor = asyncHandler(async (req, res) => {
     name,
     brand,
     model,
+    model_year,
     engine_power_hp,
+    price,
     weight_kg,
     traction_force_kn,
     traction_type,
@@ -260,9 +272,17 @@ export const updateTractor = asyncHandler(async (req, res) => {
     name,
     brand,
     model,
+    model_year:
+      model_year !== undefined && model_year !== null
+        ? Number(model_year)
+        : undefined,
     engine_power_hp:
       engine_power_hp !== undefined && engine_power_hp !== null
         ? Number(engine_power_hp)
+        : undefined,
+    price:
+      price !== undefined && price !== null
+        ? Number(price)
         : undefined,
     weight_kg:
       weight_kg !== undefined && weight_kg !== null

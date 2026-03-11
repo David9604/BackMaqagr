@@ -35,3 +35,8 @@ jest.setTimeout(30000);
 afterEach(() => {
   jest.restoreAllMocks();
 });
+
+afterAll(async () => {
+  const { closeSequelize } = await import('../../../src/config/sequelize.js');
+  await closeSequelize();
+});

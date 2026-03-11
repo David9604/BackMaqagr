@@ -27,6 +27,18 @@ describe("CORS Middleware", () => {
     );
   });
 
+  test("debería permitir requests desde localhost:4000 para Swagger UI local", async () => {
+    const response = await request(app)
+      .options("/api/auth/login")
+      .set("Origin", "http://localhost:4000")
+      .set("Access-Control-Request-Method", "POST");
+
+    expect(response.status).toBe(204);
+    expect(response.headers["access-control-allow-origin"]).toBe(
+      "http://localhost:4000",
+    );
+  });
+
   test("debería bloquear orígenes NO autorizados y lanzar un error CORS", async () => {
     const response = await request(app)
       .get("/api/tractors")

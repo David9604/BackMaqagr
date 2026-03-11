@@ -92,6 +92,8 @@ describe('Exports - Integración', () => {
       expect(res.headers['content-disposition']).toMatch(/attachment/);
       expect(res.text).toContain('"name","brand","power","year","price"');
       expect(res.text).toContain('John Deere 5075E');
+      expect(res.text).toContain('2023');
+      expect(res.text).toContain('65000');
     });
 
     it('debe rechazar formato inválido', async () => {

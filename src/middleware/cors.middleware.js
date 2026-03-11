@@ -1,5 +1,4 @@
 import cors from "cors";
-import logger from "../utils/logger.js"; // Opcional, pero bueno para depurar orígenes rechazados
 
 /**
  * Middleware de configuración dinámica de CORS.
@@ -7,14 +6,17 @@ import logger from "../utils/logger.js"; // Opcional, pero bueno para depurar or
  */
 const getCorsOptions = () => {
   const env = process.env.NODE_ENV || "development";
+  const currentPort = process.env.PORT || "4000";
 
   // Definición de orígenes permitidos por entorno
   const allowedOrigins = {
     development: [
       "http://localhost:3000",
       "http://localhost:5173",
+      `http://localhost:${currentPort}`,
       "http://127.0.0.1:3000",
       "http://127.0.0.1:5173",
+      `http://127.0.0.1:${currentPort}`,
     ],
     staging: [process.env.STAGING_CLIENT_URL || "https://staging.maqagr.com"],
     production: [process.env.PROD_CLIENT_URL || "https://app.maqagr.com"],
