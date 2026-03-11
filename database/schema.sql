@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS implement CASCADE;
 DROP TABLE IF EXISTS tractor CASCADE;
 DROP TABLE IF EXISTS terrain CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS notification CASCADE;
 DROP TABLE IF EXISTS role CASCADE;
 
 -- ============================================
@@ -166,6 +167,21 @@ CREATE TABLE query_history (
 );
 
 -- ============================================
+-- TABLE: notification
+-- System Notifications
+-- ============================================
+CREATE TABLE notification (
+    notification_id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT,
+    data JSONB,
+    read BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================
 -- INDEXES FOR OPTIMIZATION
 -- ============================================
 
@@ -191,6 +207,8 @@ CREATE INDEX idx_query_type ON query(query_type);
 
 CREATE INDEX idx_history_user ON query_history(user_id);
 CREATE INDEX idx_history_date ON query_history(action_date);
+
+CREATE INDEX idx_notification_user_unread ON notification(user_id, read) WHERE read = false;
 
 -- ============================================
 -- TEST DATA (OPTIONAL)
