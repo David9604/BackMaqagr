@@ -1,0 +1,45 @@
+
+> backend@1.0.0 test:e2e
+> node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPatterns=e2e
+
+FAIL src/__tests__/e2e/notification.test.js
+  ÔùÅ Test suite failed to run
+
+    SyntaxError: The requested module '../services/notificationService.js' does not provide an export named 'notifyUsersAboutNewTractor'
+
+      at Runtime.linkAndEvaluateModule (node_modules/jest-runtime/build/index.js:684:5)
+
+(node:19368) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+FAIL src/__tests__/e2e/calculation-validation-flow.test.js
+  ÔùÅ Test suite failed to run
+
+    SyntaxError: The requested module '../services/notificationService.js' does not provide an export named 'notifyUsersAboutNewTractor'
+
+      at Runtime.linkAndEvaluateModule (node_modules/jest-runtime/build/index.js:684:5)
+
+(node:17128) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+FAIL src/__tests__/e2e/recommendation-flow.test.js
+  ÔùÅ Test suite failed to run
+
+    SyntaxError: The requested module '../services/notificationService.js' does not provide an export named 'notifyUsersAboutNewTractor'
+
+      at Runtime.linkAndEvaluateModule (node_modules/jest-runtime/build/index.js:684:5)
+
+(node:32792) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+FAIL src/__tests__/e2e/role-permissions.test.js
+  ÔùÅ Test suite failed to run
+
+    SyntaxError: The requested module '../services/notificationService.js' does not provide an export named 'notifyUsersAboutNewTractor'
+
+      at Runtime.linkAndEvaluateModule (node_modules/jest-runtime/build/index.js:684:5)
+
+(node:26392) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+Test Suites: 4 failed, 4 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        4.415 s
+Ran all test suites matching e2e.

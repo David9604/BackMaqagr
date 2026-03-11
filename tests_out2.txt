@@ -1,0 +1,342 @@
+
+> backend@1.0.0 test:e2e
+> node --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPatterns=e2e
+
+  console.log
+    [dotenv@17.3.1] injecting env (6) from .env -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (0) from .env -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (6) from .env -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (0) from .env -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (6) from .env -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (0) from .env -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (6) from .env -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (0) from .env -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (0) from .env -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (0) from .env -- tip: ÔÜí´©Å secrets for agents: https://dotenvx.com/as2
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (0) from .env -- tip: ÔÜí´©Å secrets for agents: https://dotenvx.com/as2
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+  console.log
+    [dotenv@17.3.1] injecting env (0) from .env -- tip: ­ƒøí´©Å auth for agents: https://vestauth.com
+
+      at _log (node_modules/dotenv/lib/main.js:139:11)
+
+(node:24520) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:19164) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:35880) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:26860) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+  console.log
+    [== OK ==] Conectado a PostgreSQL
+
+      at BoundPool.<anonymous> (src/config/db.js:52:11)
+
+  console.log
+    [== OK ==] Conectado a PostgreSQL
+
+      at BoundPool.<anonymous> (src/config/db.js:52:11)
+
+  console.log
+    [== OK ==] Conectado a PostgreSQL
+
+      at BoundPool.<anonymous> (src/config/db.js:52:11)
+
+  console.log
+    [== OK ==] Conectado a PostgreSQL
+
+      at BoundPool.<anonymous> (src/config/db.js:52:11)
+
+  console.log
+    Ruta /api/roles no requiere permisos admin
+
+      at Object.<anonymous> (src/__tests__/e2e/role-permissions.test.js:54:15)
+
+  console.log
+    [== OK ==] Conectado a PostgreSQL
+
+      at BoundPool.<anonymous> (src/config/db.js:52:11)
+
+  console.log
+    [== OK ==] Conectado a PostgreSQL
+
+      at BoundPool.<anonymous> (src/config/db.js:52:11)
+
+  console.log
+    [== OK ==] Conectado a PostgreSQL
+
+      at BoundPool.<anonymous> (src/config/db.js:52:11)
+
+  console.log
+    [== OK ==] Conectado a PostgreSQL
+
+      at BoundPool.<anonymous> (src/config/db.js:52:11)
+
+  console.log
+    [== OK ==] Conectado a PostgreSQL
+
+      at BoundPool.<anonymous> (src/config/db.js:52:11)
+
+  console.log
+    [== OK ==] Conectado a PostgreSQL
+
+      at BoundPool.<anonymous> (src/config/db.js:52:11)
+
+  console.log
+    [== OK ==] Conectado a PostgreSQL
+
+      at BoundPool.<anonymous> (src/config/db.js:52:11)
+
+FAIL src/__tests__/e2e/notification.test.js (5.11 s)
+  ÔùÅ Notification API E2E ÔÇ║ Notification CRUD ÔÇ║ GET /api/notifications should return the user notifications
+
+    error: no existe la relaci├│n ┬½notification┬╗
+
+      38 |     beforeAll(async () => {
+      39 |       // Inserci├│n manual de una notificaci├│n base para las pruebas
+    > 40 |       const res = await pool.query(
+         |                   ^
+      41 |         `INSERT INTO notification (user_id, type, title, message, data, read, created_at)
+      42 |          VALUES ($1, 'system', 'Welcome', 'Welcome to the system', '{"test":true}', false, NOW())
+      43 |          RETURNING notification_id`,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.<anonymous> (src/__tests__/e2e/notification.test.js:40:19)
+
+  ÔùÅ Notification API E2E ÔÇ║ Notification CRUD ÔÇ║ GET /api/notifications/unread/count should return count > 0
+
+    error: no existe la relaci├│n ┬½notification┬╗
+
+      38 |     beforeAll(async () => {
+      39 |       // Inserci├│n manual de una notificaci├│n base para las pruebas
+    > 40 |       const res = await pool.query(
+         |                   ^
+      41 |         `INSERT INTO notification (user_id, type, title, message, data, read, created_at)
+      42 |          VALUES ($1, 'system', 'Welcome', 'Welcome to the system', '{"test":true}', false, NOW())
+      43 |          RETURNING notification_id`,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.<anonymous> (src/__tests__/e2e/notification.test.js:40:19)
+
+  ÔùÅ Notification API E2E ÔÇ║ Notification CRUD ÔÇ║ PUT /api/notifications/:id/read should mark notification as read
+
+    error: no existe la relaci├│n ┬½notification┬╗
+
+      38 |     beforeAll(async () => {
+      39 |       // Inserci├│n manual de una notificaci├│n base para las pruebas
+    > 40 |       const res = await pool.query(
+         |                   ^
+      41 |         `INSERT INTO notification (user_id, type, title, message, data, read, created_at)
+      42 |          VALUES ($1, 'system', 'Welcome', 'Welcome to the system', '{"test":true}', false, NOW())
+      43 |          RETURNING notification_id`,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.<anonymous> (src/__tests__/e2e/notification.test.js:40:19)
+
+  ÔùÅ Notification API E2E ÔÇ║ Notification CRUD ÔÇ║ PUT /api/notifications/read-all should mark all notifications as read
+
+    error: no existe la relaci├│n ┬½notification┬╗
+
+      38 |     beforeAll(async () => {
+      39 |       // Inserci├│n manual de una notificaci├│n base para las pruebas
+    > 40 |       const res = await pool.query(
+         |                   ^
+      41 |         `INSERT INTO notification (user_id, type, title, message, data, read, created_at)
+      42 |          VALUES ($1, 'system', 'Welcome', 'Welcome to the system', '{"test":true}', false, NOW())
+      43 |          RETURNING notification_id`,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.<anonymous> (src/__tests__/e2e/notification.test.js:40:19)
+
+  ÔùÅ Notification API E2E ÔÇ║ Notification CRUD ÔÇ║ DELETE /api/notifications/:id should delete a notification
+
+    error: no existe la relaci├│n ┬½notification┬╗
+
+      38 |     beforeAll(async () => {
+      39 |       // Inserci├│n manual de una notificaci├│n base para las pruebas
+    > 40 |       const res = await pool.query(
+         |                   ^
+      41 |         `INSERT INTO notification (user_id, type, title, message, data, read, created_at)
+      42 |          VALUES ($1, 'system', 'Welcome', 'Welcome to the system', '{"test":true}', false, NOW())
+      43 |          RETURNING notification_id`,
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.<anonymous> (src/__tests__/e2e/notification.test.js:40:19)
+
+  ÔùÅ Notification API E2E ÔÇ║ Admin Broadcast Feature ÔÇ║ should successfully broadcast if admin
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 0
+
+      141 |       expect(response.status).toBe(200);
+      142 |       expect(response.body.success).toBe(true);
+    > 143 |       expect(response.body.data.count).toBe(2);
+          |                                        ^
+      144 |
+      145 |       const userNotifications = await request(app)
+      146 |         .get('/api/notifications')
+
+      at Object.<anonymous> (src/__tests__/e2e/notification.test.js:143:40)
+
+
+  ÔùÅ Test suite failed to run
+
+    error: no existe la relaci├│n ┬½notification┬╗
+
+      27 |       await pool.query('DELETE FROM users WHERE user_id IN ($1, $2)', [user.user_id, adminUser.user_id]);
+      28 |     }
+    > 29 |     await pool.query('DELETE FROM notification');
+         |     ^
+      30 |     await pool.end();
+      31 |     
+      32 |     if (redisClient) {
+
+      at node_modules/pg-pool/index.js:45:11
+      at Object.<anonymous> (src/__tests__/e2e/notification.test.js:29:5)
+
+  console.log
+    [== OK ==] Conectado a PostgreSQL
+
+      at BoundPool.<anonymous> (src/config/db.js:52:11)
+
+PASS src/__tests__/e2e/calculation-validation-flow.test.js (5.234 s)
+  E2E: Flujo de c├ílculos con validaci├│n progresiva
+    ÔêÜ debe calcular potencia m├¡nima con payload v├ílido (835 ms)
+    ÔêÜ debe rechazar c├ílculo con implement_id inv├ílido (22 ms)
+    ÔêÜ debe rechazar c├ílculo con terrain_id faltante (15 ms)
+    ÔêÜ debe rechazar c├ílculo con working_depth_m inv├ílida (> 1.0) (21 ms)
+    ÔêÜ debe rechazar c├ílculo con working_depth_m negativo (19 ms)
+    ÔêÜ debe aceptar c├ílculo sin working_depth_m (campo opcional) (67 ms)
+    ÔêÜ debe calcular potencia requerida de implemento con payload v├ílido (29 ms)
+    ÔêÜ debe rechazar potencia de implemento con working_depth_m > 1.0m (15 ms)
+    ÔêÜ debe validar conversi├│n de tipos num├®ricos en payload (26 ms)
+    ÔêÜ debe retornar error detallado cuando implemento no existe en DB (25 ms)
+    ÔêÜ debe validar formato JSend en todas las respuestas exitosas (25 ms)
+    ÔêÜ debe validar formato JSend en todas las respuestas de error (14 ms)
+
+FAIL src/__tests__/e2e/recommendation-flow.test.js (15.331 s)
+  E2E: Flujo completo de recomendaci├│n
+    ÔêÜ debe completar flujo: autenticaci├│n ÔåÆ crear terreno ÔåÆ c├ílculo ÔåÆ recomendaci├│n (1018 ms)
+    ÔêÜ debe fallar si el usuario no est├í autenticado (17 ms)
+    ÔêÜ debe validar datos inv├ílidos en c├ílculo de potencia (24 ms)
+    ÔêÜ debe manejar terreno inexistente en c├ílculo (23 ms)
+    ├ù debe retornar historial de recomendaciones para el usuario (10017 ms)
+
+  ÔùÅ E2E: Flujo completo de recomendaci├│n ÔÇ║ debe retornar historial de recomendaciones para el usuario
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      218 |   });
+      219 |
+    > 220 |   test('debe retornar historial de recomendaciones para el usuario', async () => {
+          |   ^
+      221 |     const { user, token } = await TestDataFactory.createAuthenticatedUser();
+      222 |     testData.userIds = [user.user_id];
+      223 |
+
+      at src/__tests__/e2e/recommendation-flow.test.js:220:3
+      at src/__tests__/e2e/recommendation-flow.test.js:22:1
+
+  console.log
+    [== OK ==] Conectado a PostgreSQL
+
+      at BoundPool.<anonymous> (src/config/db.js:52:11)
+
+FAIL src/__tests__/e2e/role-permissions.test.js (16.779 s)
+  E2E: Flujo de permisos por roles
+    ÔêÜ usuario normal (role_id=2) NO debe poder acceder a rutas admin (648 ms)
+    ÔêÜ usuario admin (role_id=1) S├ì debe poder acceder a rutas admin (46 ms)
+    ÔêÜ request sin token debe retornar 401 Unauthorized (37 ms)
+    ÔêÜ request con token inv├ílido debe retornar 401 (20 ms)
+    ÔêÜ request con token expirado debe retornar 401 (22 ms)
+    ├ù usuario normal puede acceder a sus propios terrenos (10018 ms)
+    ÔêÜ usuario normal NO puede acceder a terrenos de otros usuarios (20 ms)
+    ├ù usuario admin puede ver todos los terrenos (1676 ms)
+    ÔêÜ debe rechazar header Authorization sin "Bearer" (12 ms)
+    ÔêÜ usuario puede actualizar su propio perfil pero no el de otros (30 ms)
+
+  ÔùÅ E2E: Flujo de permisos por roles ÔÇ║ usuario normal puede acceder a sus propios terrenos
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      114 |   });
+      115 |
+    > 116 |   test('usuario normal puede acceder a sus propios terrenos', async () => {
+          |   ^
+      117 |     const { user, token } = await TestDataFactory.createAuthenticatedUser(2);
+      118 |     testData.userIds = [user.user_id];
+      119 |
+
+      at src/__tests__/e2e/role-permissions.test.js:116:3
+      at src/__tests__/e2e/role-permissions.test.js:20:1
+
+  ÔùÅ E2E: Flujo de permisos por roles ÔÇ║ usuario admin puede ver todos los terrenos
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      181 |       .get('/api/terrains');
+      182 |
+    > 183 |     expect(response.status).toBe(200);
+          |                             ^
+      184 |     expect(response.body.success).toBe(true);
+      185 |     expect(Array.isArray(response.body.data)).toBe(true);
+      186 |
+
+      at Object.<anonymous> (src/__tests__/e2e/role-permissions.test.js:183:29)
+
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+Test Suites: 3 failed, 1 passed, 4 total
+Tests:       9 failed, 25 passed, 34 total
+Snapshots:   0 total
+Time:        17.832 s
+Ran all test suites matching e2e.
