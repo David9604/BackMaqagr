@@ -1,5 +1,6 @@
 import Tractor from '../models/Tractor.js';
 import { asyncHandler } from '../middleware/error.middleware.js';
+import { notifyUsersAboutNewTractor } from '../services/notificationService.js';
 
 const applyPagination = (items, paginationParams) => {
   const { limit, offset, sort, order, page } = paginationParams;
@@ -210,6 +211,10 @@ export const createTractor = asyncHandler(async (req, res) => {
 
   const newTractor = await Tractor.create(payload);
 
+  if (newTractor.status === 'available' || newTractor.status === 'active') {
+    notifyUsersAboutNewTractor(newTractor).catch(err => console.error(err));
+  }
+
   return res.status(201).json({
     success: true,
     data: newTractor,
@@ -284,6 +289,10 @@ export const updateTractor = asyncHandler(async (req, res) => {
   };
 
   const updated = await Tractor.update(id, updateData);
+
+  if (updated && (updated.status === 'available' || updated.status === 'active') && existing.status !== 'available') {
+    notifyUsersAboutNewTractor(updated).catch(err => console.error(err));
+  }
 
   return res.json({
     success: true,
