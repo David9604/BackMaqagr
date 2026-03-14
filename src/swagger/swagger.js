@@ -89,6 +89,14 @@ Authorization: Bearer <tu_token>
         description: 'Sistema de recomendación inteligente de tractores',
       },
       {
+        name: 'Admin',
+        description: 'Analytics, estadísticas y métricas administrativas',
+      },
+      {
+        name: 'Exports',
+        description: 'Exportación de catálogos y recomendaciones',
+      },
+      {
         name: 'Roles',
         description: 'Gestión de roles del sistema (solo administradores)',
       },

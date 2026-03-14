@@ -67,7 +67,9 @@ const DataGenerator = {
       name: `Tractor Compacto 35HP${suffix}`,
       brand: 'Kubota',
       model: 'L3301',
+      model_year: 2024,
       engine_power_hp: 35,
+      price: 31000,
       weight_kg: 1200,
       traction_force_kn: 15,
       traction_type: '4x4',
@@ -79,7 +81,9 @@ const DataGenerator = {
       name: `Tractor Mediano 2WD${suffix}`,
       brand: 'New Holland',
       model: 'TT3.55',
+      model_year: 2024,
       engine_power_hp: 55,
+      price: 54000,
       weight_kg: 2800,
       traction_force_kn: 38,
       traction_type: '4x2',
@@ -91,7 +95,9 @@ const DataGenerator = {
       name: `Tractor Mediano 4WD${suffix}`,
       brand: 'John Deere',
       model: '5075E',
+      model_year: 2023,
       engine_power_hp: 75,
+      price: 65000,
       weight_kg: 3200,
       traction_force_kn: 45,
       traction_type: '4x4',
@@ -103,7 +109,9 @@ const DataGenerator = {
       name: `Tractor Grande 4WD${suffix}`,
       brand: 'Massey Ferguson',
       model: '4709',
+      model_year: 2022,
       engine_power_hp: 90,
+      price: 72000,
       weight_kg: 3500,
       traction_force_kn: 52,
       traction_type: '4x4',
@@ -115,7 +123,9 @@ const DataGenerator = {
       name: `Tractor Orugas${suffix}`,
       brand: 'Caterpillar',
       model: 'Challenger MT765',
+      model_year: 2021,
       engine_power_hp: 120,
+      price: 180000,
       weight_kg: 5500,
       traction_force_kn: 85,
       traction_type: 'track',
@@ -425,11 +435,11 @@ async function insertTractors(client, tractorTypes) {
     }
     
     const result = await client.query(`
-      INSERT INTO tractor (name, brand, model, engine_power_hp, weight_kg, traction_force_kn, traction_type, tire_type, status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'available')
+      INSERT INTO tractor (name, brand, model, model_year, engine_power_hp, price, weight_kg, traction_force_kn, traction_type, tire_type, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'available')
       RETURNING tractor_id
-    `, [data.name, data.brand, data.model, data.engine_power_hp, data.weight_kg, 
-        data.traction_force_kn, data.traction_type, data.tire_type]);
+    `, [data.name, data.brand, data.model, data.model_year, data.engine_power_hp, data.price,
+        data.weight_kg, data.traction_force_kn, data.traction_type, data.tire_type]);
     
     console.log(`${ASCII.ok} Tractor creado: ${data.name} (${data.engine_power_hp} HP, ${data.traction_type}) → ID ${result.rows[0].tractor_id}`);
     inserted.push({ id: result.rows[0].tractor_id, ...data });

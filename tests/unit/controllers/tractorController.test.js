@@ -16,6 +16,7 @@ const mockUpdate = jest.fn();
 const mockDelete = jest.fn();
 const mockGetAvailable = jest.fn();
 const mockAdvancedSearch = jest.fn();
+const mockFindRecommendationsByTractor = jest.fn();
 
 // Mock de Tractor model
 jest.unstable_mockModule("../../../src/models/Tractor.js", () => ({
@@ -27,6 +28,13 @@ jest.unstable_mockModule("../../../src/models/Tractor.js", () => ({
     delete: mockDelete,
     getAvailable: mockGetAvailable,
     advancedSearch: mockAdvancedSearch,
+  },
+  __esModule: true,
+}));
+
+jest.unstable_mockModule("../../../src/models/Recommendation.js", () => ({
+  default: {
+    findByTractor: mockFindRecommendationsByTractor,
   },
   __esModule: true,
 }));
@@ -94,6 +102,7 @@ const mockTractor = {
 describe("tractorController", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockFindRecommendationsByTractor.mockResolvedValue([]);
   });
 
   // ========================================================

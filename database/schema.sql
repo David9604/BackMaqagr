@@ -70,7 +70,9 @@ CREATE TABLE tractor (
     name VARCHAR(150) NOT NULL,
     brand VARCHAR(100) NOT NULL,
     model VARCHAR(100) NOT NULL,
+    model_year INTEGER,
     engine_power_hp DOUBLE PRECISION NOT NULL,
+    price DOUBLE PRECISION,
     weight_kg DOUBLE PRECISION NOT NULL,
     traction_force_kn DOUBLE PRECISION NOT NULL,
     traction_type VARCHAR(50) NOT NULL CHECK (traction_type IN ('4x2', '4x4', 'track')),
@@ -212,10 +214,14 @@ INSERT INTO users (name, email, password, role_id, status) VALUES
 ('Demo User', 'demo@maqagr.com', '$2b$10$sample_hash_bcrypt', 2, 'active');
 
 -- Insert sample tractors
-INSERT INTO tractor (name, brand, model, engine_power_hp, weight_kg, traction_force_kn, traction_type, tire_type, price_usd, fuel_consumption_lph, maintenance_cost_per_hour, status) VALUES
-('John Deere 5075E', 'John Deere', '5075E', 75, 3200, 45, '4x4', 'Radial 16.9R30', 35000, 12.5, 5.0, 'available'),
-('Massey Ferguson 4709', 'Massey Ferguson', '4709', 90, 3500, 52, '4x4', 'Radial 18.4R34', 42000, 15.0, 6.5, 'available'),
-('New Holland TT3.55', 'New Holland', 'TT3.55', 55, 2800, 38, '4x2', 'Diagonal 14.9-28', 25000, 9.8, 4.2, 'available');
+INSERT INTO tractor (
+    name, brand, model, model_year, engine_power_hp, price, weight_kg,
+    traction_force_kn, traction_type, tire_type, price_usd,
+    fuel_consumption_lph, maintenance_cost_per_hour, status
+) VALUES
+('John Deere 5075E', 'John Deere', '5075E', 2023, 75, 65000, 3200, 45, '4x4', 'Radial 16.9R30', 65000, 12.5, 5.0, 'available'),
+('Massey Ferguson 4709', 'Massey Ferguson', '4709', 2022, 90, 72000, 3500, 52, '4x4', 'Radial 18.4R34', 72000, 15.0, 6.5, 'available'),
+('New Holland TT3.55', 'New Holland', 'TT3.55', 2024, 55, 54000, 2800, 38, '4x2', 'Diagonal 14.9-28', 54000, 9.8, 4.2, 'available');
 
 -- Insert sample implements
 INSERT INTO implement (implement_name, brand, power_requirement_hp, working_width_m, soil_type, implement_type, status) VALUES

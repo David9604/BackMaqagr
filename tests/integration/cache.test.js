@@ -17,6 +17,7 @@ jest.unstable_mockModule('../../src/middleware/auth.middleware.js', () => ({
         req.user = { id: 1, role_id: 1 };
         next();
     }),
+    requireRole: jest.fn(() => (req, res, next) => next()),
     isAdmin: jest.fn((req, res, next) => next()),
 }));
 
@@ -56,7 +57,9 @@ describe('Cache Integration Tests', () => {
             name: 'Deere X300',
             brand: 'John Deere',
             model: 'X300',
+            model_year: 2025,
             engine_power_hp: 300,
+            price: 150000,
             weight_kg: 5000,
             traction_force_kn: 45,
             fuel_tank_l: 200,
