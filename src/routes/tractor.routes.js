@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   getAllTractors,
   getAvailableTractors,
@@ -7,20 +7,23 @@ import {
   createTractor,
   updateTractor,
   deleteTractor,
-} from '../controllers/tractorController.js';
+} from "../controllers/tractorController.js";
 import {
   verifyTokenMiddleware,
   isAdmin,
-} from '../middleware/auth.middleware.js';
-import { validateTractor } from '../middleware/validation.middleware.js';
-import { paginationMiddleware } from '../middleware/pagination.middleware.js';
+} from "../middleware/auth.middleware.js";
+import { validateTractor } from "../middleware/validation.middleware.js";
+import { paginationMiddleware } from "../middleware/pagination.middleware.js";
 
-import { cacheMiddleware, invalidateCacheMiddleware } from '../middleware/cache.middleware.js';
+import {
+  cacheMiddleware,
+  invalidateCacheMiddleware,
+} from "../middleware/cache.middleware.js";
 
 const router = Router();
 
 // Rutas públicas para el catálogo de tractores
-router.get('/', cacheMiddleware(86400), getAllTractors);
+router.get("/", cacheMiddleware(86400), getAllTractors);
 // ==================== RUTAS PÚBLICAS ====================
 
 /**
@@ -77,7 +80,7 @@ router.get('/', cacheMiddleware(86400), getAllTractors);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/', paginationMiddleware(), getAllTractors);
+router.get("/", paginationMiddleware(), getAllTractors);
 
 /**
  * @swagger
@@ -130,30 +133,31 @@ router.get('/', paginationMiddleware(), getAllTractors);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/available', paginationMiddleware(), getAvailableTractors);
+router.get("/available", paginationMiddleware(), getAvailableTractors);
 
 /**
  * @swagger
  * /api/tractors/search:
  *   get:
- *     summary: Buscar tractores con filtros
+ *     summary: Búsqueda avanzada de tractores
  *     description: |
- *       Permite buscar tractores aplicando filtros por marca, modelo y rango de potencia.
- *       Todos los filtros son opcionales y se pueden combinar.
+ *       Búsqueda full-text en name, brand y model con filtros combinados.
+ *       Los resultados se ordenan por relevancia (coincidencias exactas primero)
+ *       y soportan paginación integrada. Todos los filtros son opcionales.
  *     tags: [Tractors]
  *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Término de búsqueda full-text (busca en name, brand, model)
+ *         example: "John Deere"
  *       - in: query
  *         name: brand
  *         schema:
  *           type: string
- *         description: Filtrar por marca (búsqueda parcial, case-insensitive)
+ *         description: Filtrar por marca exacta (case-insensitive)
  *         example: "John Deere"
- *       - in: query
- *         name: model
- *         schema:
- *           type: string
- *         description: Filtrar por modelo (búsqueda parcial, case-insensitive)
- *         example: "6130"
  *       - in: query
  *         name: minPower
  *         schema:
@@ -167,20 +171,40 @@ router.get('/available', paginationMiddleware(), getAvailableTractors);
  *         description: Potencia máxima en HP
  *         example: 200
  *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [4x2, 4x4, track]
+ *         description: Tipo de tracción
+ *         example: "4x4"
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Número de página
+ *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
  *           default: 10
  *         description: Cantidad de registros por página
  *       - in: query
- *         name: offset
+ *         name: sort
  *         schema:
- *           type: integer
- *           default: 0
- *         description: Número de registros a saltar
+ *           type: string
+ *           enum: [name, brand, model, engine_power_hp, weight_kg, traction_type, status]
+ *         description: Campo por el que ordenar (secundario a relevancia si se usa q)
+ *       - in: query
+ *         name: order
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *         description: Dirección del ordenamiento
  *     responses:
  *       200:
- *         description: Resultados de búsqueda
+ *         description: Resultados de búsqueda con paginación
  *         content:
  *           application/json:
  *             schema:
@@ -196,19 +220,21 @@ router.get('/available', paginationMiddleware(), getAvailableTractors);
  *                 pagination:
  *                   type: object
  *                   properties:
- *                     total:
+ *                     page:
  *                       type: integer
  *                     limit:
  *                       type: integer
- *                     offset:
+ *                     total:
+ *                       type: integer
+ *                     totalPages:
  *                       type: integer
  *                 filters:
  *                   type: object
  *                   properties:
- *                     brand:
+ *                     q:
  *                       type: string
  *                       nullable: true
- *                     model:
+ *                     brand:
  *                       type: string
  *                       nullable: true
  *                     minPower:
@@ -217,6 +243,15 @@ router.get('/available', paginationMiddleware(), getAvailableTractors);
  *                     maxPower:
  *                       type: number
  *                       nullable: true
+ *                     type:
+ *                       type: string
+ *                       nullable: true
+ *       400:
+ *         description: Parámetros de filtro inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       500:
  *         description: Error interno del servidor
  *         content:
@@ -224,7 +259,7 @@ router.get('/available', paginationMiddleware(), getAvailableTractors);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/search', paginationMiddleware(), searchTractors);
+router.get("/search", paginationMiddleware(), searchTractors);
 
 /**
  * @swagger
@@ -279,11 +314,31 @@ router.get('/search', paginationMiddleware(), searchTractors);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/:id', getTractorById);
+router.get("/:id", getTractorById);
 
-router.post('/', verifyTokenMiddleware, isAdmin, validateTractor, invalidateCacheMiddleware('*tractors*'), createTractor);
-router.put('/:id', verifyTokenMiddleware, isAdmin, validateTractor, invalidateCacheMiddleware(['*tractors*', '*recommendations*']), updateTractor);
-router.delete('/:id', verifyTokenMiddleware, isAdmin, invalidateCacheMiddleware(['*tractors*', '*recommendations*']), deleteTractor);
+router.post(
+  "/",
+  verifyTokenMiddleware,
+  isAdmin,
+  validateTractor,
+  invalidateCacheMiddleware("*tractors*"),
+  createTractor,
+);
+router.put(
+  "/:id",
+  verifyTokenMiddleware,
+  isAdmin,
+  validateTractor,
+  invalidateCacheMiddleware(["*tractors*", "*recommendations*"]),
+  updateTractor,
+);
+router.delete(
+  "/:id",
+  verifyTokenMiddleware,
+  isAdmin,
+  invalidateCacheMiddleware(["*tractors*", "*recommendations*"]),
+  deleteTractor,
+);
 // ==================== RUTAS PROTEGIDAS (ADMIN) ====================
 
 /**
@@ -360,7 +415,13 @@ router.delete('/:id', verifyTokenMiddleware, isAdmin, invalidateCacheMiddleware(
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/', verifyTokenMiddleware, isAdmin, validateTractor, createTractor);
+router.post(
+  "/",
+  verifyTokenMiddleware,
+  isAdmin,
+  validateTractor,
+  createTractor,
+);
 
 /**
  * @swagger
@@ -437,7 +498,13 @@ router.post('/', verifyTokenMiddleware, isAdmin, validateTractor, createTractor)
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.put('/:id', verifyTokenMiddleware, isAdmin, validateTractor, updateTractor);
+router.put(
+  "/:id",
+  verifyTokenMiddleware,
+  isAdmin,
+  validateTractor,
+  updateTractor,
+);
 
 /**
  * @swagger
@@ -503,6 +570,6 @@ router.put('/:id', verifyTokenMiddleware, isAdmin, validateTractor, updateTracto
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.delete('/:id', verifyTokenMiddleware, isAdmin, deleteTractor);
+router.delete("/:id", verifyTokenMiddleware, isAdmin, deleteTractor);
 
 export default router;

@@ -22,6 +22,17 @@ CREATE INDEX IF NOT EXISTS idx_query_history_user_id ON query_history(user_id);
 -- Optimize checking existing recommendations for specific tractor
 CREATE INDEX IF NOT EXISTS idx_recommendation_tractor_created ON recommendation(tractor_id, recommendation_date);
 
+-- 6. Full-Text Search Optimization (Tractor)
+-- Requires pg_trgm extension for ILIKE performance
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX IF NOT EXISTS idx_tractor_name_trgm ON tractor USING gin (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_tractor_brand_trgm ON tractor USING gin (brand gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_tractor_model_trgm ON tractor USING gin (model gin_trgm_ops);
+
+-- 7. Full-Text Search Optimization (Implement)
+CREATE INDEX IF NOT EXISTS idx_implement_name_trgm ON implement USING gin (implement_name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_implement_brand_trgm ON implement USING gin (brand gin_trgm_ops);
+
 -- ============================================
 -- USAGE
 -- Execute this script in your PostgreSQL database:

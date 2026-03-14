@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   getAllImplements,
   getAvailableImplements,
@@ -7,20 +7,23 @@ import {
   createImplement,
   updateImplement,
   deleteImplement,
-} from '../controllers/implementController.js';
+} from "../controllers/implementController.js";
 import {
   verifyTokenMiddleware,
   isAdmin,
-} from '../middleware/auth.middleware.js';
-import { validateImplement } from '../middleware/validation.middleware.js';
-import { paginationMiddleware } from '../middleware/pagination.middleware.js';
+} from "../middleware/auth.middleware.js";
+import { validateImplement } from "../middleware/validation.middleware.js";
+import { paginationMiddleware } from "../middleware/pagination.middleware.js";
 
-import { cacheMiddleware, invalidateCacheMiddleware } from '../middleware/cache.middleware.js';
+import {
+  cacheMiddleware,
+  invalidateCacheMiddleware,
+} from "../middleware/cache.middleware.js";
 
 const router = Router();
 
 // Rutas públicas para el catálogo de implementos
-router.get('/', cacheMiddleware(86400), getAllImplements);
+router.get("/", cacheMiddleware(86400), getAllImplements);
 // ==================== RUTAS PÚBLICAS ====================
 
 /**
@@ -77,7 +80,7 @@ router.get('/', cacheMiddleware(86400), getAllImplements);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/', paginationMiddleware(), getAllImplements);
+router.get("/", paginationMiddleware(), getAllImplements);
 
 /**
  * @swagger
@@ -130,36 +133,60 @@ router.get('/', paginationMiddleware(), getAllImplements);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/available', paginationMiddleware(), getAvailableImplements);
+router.get("/available", paginationMiddleware(), getAvailableImplements);
 
 /**
  * @swagger
  * /api/implements/search:
  *   get:
- *     summary: Buscar implementos con filtros
+ *     summary: Buscar implementos con filtros avanzados
  *     description: |
- *       Permite buscar implementos agrícolas aplicando filtros por tipo, tipo de suelo y potencia máxima.
- *       Todos los filtros son opcionales y se pueden combinar.
+ *       Permite buscar implementos agrícolas aplicando búsqueda full-text y filtros combinados.
+ *       También permite ordenar los resultados por compatibilidad técnica con un tractor específico.
  *     tags: [Implements]
  *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Búsqueda full-text en nombre y marca (case-insensitive)
+ *         example: "arado"
  *       - in: query
  *         name: type
  *         schema:
  *           type: string
- *         description: Filtrar por tipo de implemento (búsqueda parcial, case-insensitive)
+ *         description: Filtrar por tipo de implemento (exacto o parcial, case-insensitive)
  *         example: "plow"
  *       - in: query
- *         name: soilType
- *         schema:
- *           type: string
- *         description: Filtrar por tipo de suelo compatible
- *         example: "clay"
- *       - in: query
- *         name: maxPower
+ *         name: minWidth
  *         schema:
  *           type: number
- *         description: Filtrar por potencia máxima requerida (HP)
- *         example: 100
+ *         description: Ancho de trabajo mínimo en metros
+ *         example: 2.5
+ *       - in: query
+ *         name: maxWidth
+ *         schema:
+ *           type: number
+ *         description: Ancho de trabajo máximo en metros
+ *         example: 5.0
+ *       - in: query
+ *         name: requiredPower
+ *         schema:
+ *           type: number
+ *         description: Potencia requerida máxima (HP)
+ *         example: 120
+ *       - in: query
+ *         name: tractorId
+ *         schema:
+ *           type: integer
+ *         description: ID de un tractor para filtrar implementos compatibles y ordenarlos por el óptimo aprovechamiento de potencia.
+ *         example: 1
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Número de página para paginación
  *       - in: query
  *         name: limit
  *         schema:
@@ -167,11 +194,16 @@ router.get('/available', paginationMiddleware(), getAvailableImplements);
  *           default: 10
  *         description: Cantidad de registros por página
  *       - in: query
- *         name: offset
+ *         name: sort
  *         schema:
- *           type: integer
- *           default: 0
- *         description: Número de registros a saltar
+ *           type: string
+ *         description: Campo por el cual ordenar los resultados (ej. implement_name, power_requirement_hp)
+ *       - in: query
+ *         name: order
+ *         schema:
+ *           type: string
+ *           enum: [desc, asc]
+ *         description: Dirección del ordenamiento
  *     responses:
  *       200:
  *         description: Resultados de búsqueda
@@ -199,14 +231,23 @@ router.get('/available', paginationMiddleware(), getAvailableImplements);
  *                 filters:
  *                   type: object
  *                   properties:
+ *                     q:
+ *                       type: string
+ *                       nullable: true
  *                     type:
  *                       type: string
  *                       nullable: true
- *                     soilType:
- *                       type: string
- *                       nullable: true
- *                     maxPower:
+ *                     minWidth:
  *                       type: number
+ *                       nullable: true
+ *                     maxWidth:
+ *                       type: number
+ *                       nullable: true
+ *                     requiredPower:
+ *                       type: number
+ *                       nullable: true
+ *                     tractorId:
+ *                       type: integer
  *                       nullable: true
  *       500:
  *         description: Error interno del servidor
@@ -215,7 +256,7 @@ router.get('/available', paginationMiddleware(), getAvailableImplements);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/search', paginationMiddleware(), searchImplements);
+router.get("/search", paginationMiddleware(), searchImplements);
 
 /**
  * @swagger
@@ -270,12 +311,32 @@ router.get('/search', paginationMiddleware(), searchImplements);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/:id', getImplementById);
+router.get("/:id", getImplementById);
 
 // Rutas protegidas (solo admin)
-router.post('/', verifyTokenMiddleware, isAdmin, validateImplement, invalidateCacheMiddleware('*implements*'), createImplement);
-router.put('/:id', verifyTokenMiddleware, isAdmin, validateImplement, invalidateCacheMiddleware(['*implements*', '*recommendations*']), updateImplement);
-router.delete('/:id', verifyTokenMiddleware, isAdmin, invalidateCacheMiddleware(['*implements*', '*recommendations*']), deleteImplement);
+router.post(
+  "/",
+  verifyTokenMiddleware,
+  isAdmin,
+  validateImplement,
+  invalidateCacheMiddleware("*implements*"),
+  createImplement,
+);
+router.put(
+  "/:id",
+  verifyTokenMiddleware,
+  isAdmin,
+  validateImplement,
+  invalidateCacheMiddleware(["*implements*", "*recommendations*"]),
+  updateImplement,
+);
+router.delete(
+  "/:id",
+  verifyTokenMiddleware,
+  isAdmin,
+  invalidateCacheMiddleware(["*implements*", "*recommendations*"]),
+  deleteImplement,
+);
 // ==================== RUTAS PROTEGIDAS (ADMIN) ====================
 
 /**
@@ -346,7 +407,13 @@ router.delete('/:id', verifyTokenMiddleware, isAdmin, invalidateCacheMiddleware(
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/', verifyTokenMiddleware, isAdmin, validateImplement, createImplement);
+router.post(
+  "/",
+  verifyTokenMiddleware,
+  isAdmin,
+  validateImplement,
+  createImplement,
+);
 
 /**
  * @swagger
@@ -423,7 +490,13 @@ router.post('/', verifyTokenMiddleware, isAdmin, validateImplement, createImplem
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.put('/:id', verifyTokenMiddleware, isAdmin, validateImplement, updateImplement);
+router.put(
+  "/:id",
+  verifyTokenMiddleware,
+  isAdmin,
+  validateImplement,
+  updateImplement,
+);
 
 /**
  * @swagger
@@ -489,7 +562,6 @@ router.put('/:id', verifyTokenMiddleware, isAdmin, validateImplement, updateImpl
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.delete('/:id', verifyTokenMiddleware, isAdmin, deleteImplement);
+router.delete("/:id", verifyTokenMiddleware, isAdmin, deleteImplement);
 
 export default router;
-
