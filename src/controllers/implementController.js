@@ -1,5 +1,5 @@
-import Implement from '../models/Implement.js';
-import { asyncHandler } from '../middleware/error.middleware.js';
+import Implement from "../models/Implement.js";
+import { asyncHandler } from "../middleware/error.middleware.js";
 
 const applyPagination = (items, paginationParams) => {
   const { limit, offset, sort, order, page } = paginationParams;
@@ -10,11 +10,11 @@ const applyPagination = (items, paginationParams) => {
       let valA = a[sort];
       let valB = b[sort];
 
-      if (typeof valA === 'string') valA = valA.toLowerCase();
-      if (typeof valB === 'string') valB = valB.toLowerCase();
+      if (typeof valA === "string") valA = valA.toLowerCase();
+      if (typeof valB === "string") valB = valB.toLowerCase();
 
-      if (valA < valB) return order === 'desc' ? 1 : -1;
-      if (valA > valB) return order === 'desc' ? -1 : 1;
+      if (valA < valB) return order === "desc" ? 1 : -1;
+      if (valA > valB) return order === "desc" ? -1 : 1;
       return 0;
     });
   }
@@ -30,7 +30,10 @@ const applyPagination = (items, paginationParams) => {
 
 export const getAllImplements = asyncHandler(async (req, res) => {
   const implementsList = await Implement.getAll();
-  const { data, total, limit, page, totalPages } = applyPagination(implementsList, req.pagination);
+  const { data, total, limit, page, totalPages } = applyPagination(
+    implementsList,
+    req.pagination,
+  );
 
   return res.json({
     success: true,
@@ -50,7 +53,7 @@ export const getImplementById = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
-      message: 'ID de implemento inválido',
+      message: "ID de implemento inválido",
     });
   }
 
@@ -59,7 +62,7 @@ export const getImplementById = asyncHandler(async (req, res) => {
   if (!implementItem) {
     return res.status(404).json({
       success: false,
-      message: 'Implemento no encontrado',
+      message: "Implemento no encontrado",
     });
   }
 
@@ -69,53 +72,87 @@ export const getImplementById = asyncHandler(async (req, res) => {
   });
 });
 
+import Tractor from "../models/Tractor.js";
+
 export const searchImplements = asyncHandler(async (req, res) => {
-  const { type, soilType, maxPower, search, brand } = req.query;
+  const { q, type, minWidth, maxWidth, requiredPower, tractorId } = req.query;
+  const { limit, offset, page, sort, order } = req.pagination;
 
-  // Usamos el modelo Implement para obtener todos y filtramos en memoria
-  const implementsList = await Implement.getAll();
+  const minWidthNum = minWidth ? parseFloat(minWidth) : null;
+  const maxWidthNum = maxWidth ? parseFloat(maxWidth) : null;
+  const requiredPowerNum = requiredPower ? parseFloat(requiredPower) : null;
 
-  let filtered = implementsList;
-
-  // Búsqueda general por nombre o marca
-  if (search) {
-    const searchLower = search.toLowerCase();
-    filtered = filtered.filter((item) =>
-      (item.implement_name && item.implement_name.toLowerCase().includes(searchLower)) ||
-      (item.brand && item.brand.toLowerCase().includes(searchLower))
-    );
+  // Validate numeric filters
+  if (minWidth && (Number.isNaN(minWidthNum) || minWidthNum < 0)) {
+    return res.status(400).json({
+      success: false,
+      message: "minWidth debe ser un número positivo",
+    });
   }
 
-  // Filtro exacto por marca
-  if (brand) {
-    const brandLower = brand.toLowerCase();
-    filtered = filtered.filter((item) =>
-      item.brand && item.brand.toLowerCase() === brandLower
-    );
+  if (maxWidth && (Number.isNaN(maxWidthNum) || maxWidthNum < 0)) {
+    return res.status(400).json({
+      success: false,
+      message: "maxWidth debe ser un número positivo",
+    });
   }
 
-  // Filtro exacto (o generalizando type)
-  if (type) {
-    const typeLower = type.toLowerCase();
-    filtered = filtered.filter((item) =>
-      item.implement_type && item.implement_type.toLowerCase() === typeLower
-    );
+  if (
+    minWidthNum !== null &&
+    maxWidthNum !== null &&
+    minWidthNum > maxWidthNum
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "minWidth no puede ser mayor que maxWidth",
+    });
   }
 
-  if (soilType) {
-    const soilLower = soilType.toLowerCase();
-    filtered = filtered.filter((item) =>
-      item.soil_type && item.soil_type.toLowerCase().includes(soilLower)
-    );
+  if (
+    requiredPower &&
+    (Number.isNaN(requiredPowerNum) || requiredPowerNum < 0)
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "requiredPower debe ser un número positivo",
+    });
   }
 
-  const maxPowerNum = maxPower ? parseFloat(maxPower) : null;
+  let tractorPower = null;
+  if (tractorId) {
+    const parsedTractorId = parseInt(tractorId, 10);
+    if (Number.isNaN(parsedTractorId) || parsedTractorId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de tractor inválido",
+      });
+    }
 
-  if (maxPowerNum !== null && !Number.isNaN(maxPowerNum)) {
-    filtered = filtered.filter((item) => item.power_requirement_hp <= maxPowerNum);
+    const tractor = await Tractor.findById(parsedTractorId);
+    if (!tractor) {
+      return res.status(404).json({
+        success: false,
+        message: "Tractor referenciado no encontrado",
+      });
+    }
+
+    tractorPower = tractor.engine_power_hp;
   }
 
-  const { data, total, limit, page, totalPages } = applyPagination(filtered, req.pagination);
+  const filters = {
+    q: q || null,
+    type: type || null,
+    minWidth: minWidthNum,
+    maxWidth: maxWidthNum,
+    requiredPower: requiredPowerNum,
+    limit,
+    offset,
+    sort,
+    order,
+  };
+
+  const { data, total } = await Implement.advancedSearch(filters, tractorPower);
+  const totalPages = Math.ceil(total / limit);
 
   return res.json({
     success: true,
@@ -127,18 +164,22 @@ export const searchImplements = asyncHandler(async (req, res) => {
       totalPages,
     },
     filters: {
-      search: search || null,
-      brand: brand || null,
+      q: q || null,
       type: type || null,
-      soilType: soilType || null,
-      maxPower: maxPowerNum,
+      minWidth: minWidthNum,
+      maxWidth: maxWidthNum,
+      requiredPower: requiredPowerNum,
+      tractorId: tractorId ? parseInt(tractorId, 10) : null,
     },
   });
 });
 
 export const getAvailableImplements = asyncHandler(async (req, res) => {
   const implementsList = await Implement.getAvailable();
-  const { data, total, limit, page, totalPages } = applyPagination(implementsList, req.pagination);
+  const { data, total, limit, page, totalPages } = applyPagination(
+    implementsList,
+    req.pagination,
+  );
 
   return res.json({
     success: true,
@@ -169,6 +210,17 @@ export const createImplement = asyncHandler(async (req, res) => {
     status,
   } = req.body || {};
 
+  // Validaciones de negocio
+  if (
+    power_requirement_hp !== undefined &&
+    (Number(power_requirement_hp) < 10 || Number(power_requirement_hp) > 500)
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "La potencia requerida debe estar entre 10 y 500 HP",
+    });
+  }
+
   const payload = {
     implement_name,
     brand,
@@ -197,7 +249,7 @@ export const createImplement = asyncHandler(async (req, res) => {
 
   return res.status(201).json({
     success: true,
-    message: 'Implemento creado exitosamente',
+    message: "Implemento creado exitosamente",
     data: newImplement,
   });
 });
@@ -208,7 +260,7 @@ export const updateImplement = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
-      message: 'ID de implemento inválido',
+      message: "ID de implemento inválido",
     });
   }
 
@@ -217,7 +269,7 @@ export const updateImplement = asyncHandler(async (req, res) => {
   if (!existing) {
     return res.status(404).json({
       success: false,
-      message: 'Implemento no encontrado',
+      message: "Implemento no encontrado",
     });
   }
 
@@ -232,6 +284,17 @@ export const updateImplement = asyncHandler(async (req, res) => {
     implement_type,
     status,
   } = req.body || {};
+
+  // Validaciones de negocio
+  if (
+    power_requirement_hp !== undefined &&
+    (Number(power_requirement_hp) < 10 || Number(power_requirement_hp) > 500)
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "La potencia requerida debe estar entre 10 y 500 HP",
+    });
+  }
 
   const updateData = {
     implement_name,
@@ -261,7 +324,7 @@ export const updateImplement = asyncHandler(async (req, res) => {
 
   return res.json({
     success: true,
-    message: 'Implemento actualizado exitosamente',
+    message: "Implemento actualizado exitosamente",
     data: updated,
   });
 });
@@ -272,7 +335,7 @@ export const deleteImplement = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
-      message: 'ID de implemento inválido',
+      message: "ID de implemento inválido",
     });
   }
 
@@ -281,16 +344,16 @@ export const deleteImplement = asyncHandler(async (req, res) => {
   if (!existing) {
     return res.status(404).json({
       success: false,
-      message: 'Implemento no encontrado',
+      message: "Implemento no encontrado",
     });
   }
 
   // Soft delete - cambiar status a 'inactive'
-  const updated = await Implement.update(id, { status: 'inactive' });
+  const updated = await Implement.update(id, { status: "inactive" });
 
   return res.json({
     success: true,
-    message: 'Implemento eliminado exitosamente',
+    message: "Implemento eliminado exitosamente",
     data: updated,
   });
 });
