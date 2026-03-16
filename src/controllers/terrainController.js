@@ -1,5 +1,5 @@
 import Terrain from "../models/Terrain.js";
-import { asyncHandler } from '../middleware/error.middleware.js';
+import { asyncHandler } from "../middleware/error.middleware.js";
 
 const applyPagination = (items, paginationParams) => {
   const { limit, offset, sort, order, page } = paginationParams;
@@ -10,11 +10,11 @@ const applyPagination = (items, paginationParams) => {
       let valA = a[sort];
       let valB = b[sort];
 
-      if (typeof valA === 'string') valA = valA.toLowerCase();
-      if (typeof valB === 'string') valB = valB.toLowerCase();
+      if (typeof valA === "string") valA = valA.toLowerCase();
+      if (typeof valB === "string") valB = valB.toLowerCase();
 
-      if (valA < valB) return order === 'desc' ? 1 : -1;
-      if (valA > valB) return order === 'desc' ? -1 : 1;
+      if (valA < valB) return order === "desc" ? 1 : -1;
+      if (valA > valB) return order === "desc" ? -1 : 1;
       return 0;
     });
   }
@@ -39,7 +39,10 @@ const applyPagination = (items, paginationParams) => {
 export const getAllTerrains = asyncHandler(async (req, res) => {
   const userId = req.user.user_id;
   const terrains = await Terrain.findByUserId(userId);
-  const { data, total, limit, page, totalPages } = applyPagination(terrains, req.pagination);
+  const { data, total, limit, page, totalPages } = applyPagination(
+    terrains,
+    req.pagination,
+  );
 
   return res.json({
     success: true,
@@ -92,6 +95,7 @@ export const createTerrain = asyncHandler(async (req, res) => {
   const userId = req.user.user_id;
   const {
     name,
+    area_hectares,
     altitude_meters,
     slope_percentage,
     soil_type,
@@ -104,8 +108,10 @@ export const createTerrain = asyncHandler(async (req, res) => {
   if (!name || typeof name !== "string" || !name.trim()) {
     errors.push("name es requerido");
   }
-  if (altitude_meters === undefined || altitude_meters === null) {
-    errors.push("altitude_meters es requerido");
+  if (area_hectares === undefined || area_hectares === null) {
+    errors.push("area_hectares es requerido");
+  } else if (Number(area_hectares) < 0.1 || Number(area_hectares) > 10000) {
+    errors.push("area_hectares debe estar entre 0.1 y 10,000 hectáreas");
   }
   if (slope_percentage === undefined || slope_percentage === null) {
     errors.push("slope_percentage es requerido");
@@ -124,6 +130,7 @@ export const createTerrain = asyncHandler(async (req, res) => {
   const payload = {
     user_id: userId,
     name,
+    area_hectares: Number(area_hectares),
     altitude_meters: Number(altitude_meters),
     slope_percentage: Number(slope_percentage),
     soil_type,
@@ -170,6 +177,7 @@ export const updateTerrain = asyncHandler(async (req, res) => {
 
   const {
     name,
+    area_hectares,
     altitude_meters,
     slope_percentage,
     soil_type,
@@ -177,8 +185,23 @@ export const updateTerrain = asyncHandler(async (req, res) => {
     status,
   } = req.body || {};
 
+  // Validar rangos si se proporcionan
+  if (
+    area_hectares !== undefined &&
+    (Number(area_hectares) < 0.1 || Number(area_hectares) > 10000)
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "area_hectares debe estar entre 0.1 y 10,000 hectáreas",
+    });
+  }
+
   const updateData = {
     name,
+    area_hectares:
+      area_hectares !== undefined && area_hectares !== null
+        ? Number(area_hectares)
+        : undefined,
     altitude_meters:
       altitude_meters !== undefined && altitude_meters !== null
         ? Number(altitude_meters)

@@ -11,8 +11,12 @@ import {
   getProfile,
   updateProfile,
   changePassword,
+  deleteUser,
 } from "../controllers/authController.js";
-import { verifyTokenMiddleware } from "../middleware/auth.middleware.js";
+import {
+  verifyTokenMiddleware,
+  isAdmin,
+} from "../middleware/auth.middleware.js";
 import {
   loginLimiter,
   publicLimiter,
@@ -369,5 +373,34 @@ router.put("/profile", verifyTokenMiddleware, updateProfile);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.put("/password", verifyTokenMiddleware, changePassword);
+
+/**
+ * @swagger
+ * /api/auth/users/{id}:
+ *   delete:
+ *     summary: Eliminar usuario (Admin)
+ *     description: |
+ *       Elimina un usuario del sistema por su ID.
+ *       Verifica que el usuario no tenga terrenos asociados antes de eliminar.
+ *       Solo accesible por administradores.
+ *     tags: [Auth]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del usuario a eliminar
+ *     responses:
+ *       200:
+ *         description: Usuario eliminado exitosamente
+ *       400:
+ *         description: El usuario tiene terrenos asociados
+ *       404:
+ *         description: Usuario no encontrado
+ */
+router.delete("/users/:id", verifyTokenMiddleware, isAdmin, deleteUser);
 
 export default router;

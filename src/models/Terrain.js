@@ -41,6 +41,7 @@ class Terrain {
     const {
       user_id,
       name,
+      area_hectares,
       altitude_meters,
       slope_percentage,
       soil_type,
@@ -50,15 +51,16 @@ class Terrain {
 
     const query = `
       INSERT INTO terrain (
-        user_id, name, altitude_meters, slope_percentage, soil_type,
+        user_id, name, area_hectares, altitude_meters, slope_percentage, soil_type,
         temperature_celsius, status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `;
     const values = [
       user_id,
       name,
+      area_hectares,
       altitude_meters,
       slope_percentage,
       soil_type,
@@ -73,6 +75,7 @@ class Terrain {
   static async update(id, terrainData) {
     const {
       name,
+      area_hectares,
       altitude_meters,
       slope_percentage,
       soil_type,
@@ -83,16 +86,18 @@ class Terrain {
     const query = `
       UPDATE terrain 
       SET name = COALESCE($1, name),
-          altitude_meters = COALESCE($2, altitude_meters),
-          slope_percentage = COALESCE($3, slope_percentage),
-          soil_type = COALESCE($4, soil_type),
-          temperature_celsius = COALESCE($5, temperature_celsius),
-          status = COALESCE($6, status)
-      WHERE terrain_id = $7
+          area_hectares = COALESCE($2, area_hectares),
+          altitude_meters = COALESCE($3, altitude_meters),
+          slope_percentage = COALESCE($4, slope_percentage),
+          soil_type = COALESCE($5, soil_type),
+          temperature_celsius = COALESCE($6, temperature_celsius),
+          status = COALESCE($7, status)
+      WHERE terrain_id = $8
       RETURNING *
     `;
     const values = [
       name,
+      area_hectares,
       altitude_meters,
       slope_percentage,
       soil_type,

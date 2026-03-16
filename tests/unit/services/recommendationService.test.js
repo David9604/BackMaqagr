@@ -13,7 +13,9 @@ describe("recommendationService", () => {
     analyzeTerrain,
     findCompatibleTractors,
     calculateScore,
+    calculateAdvancedScore,
     generateRecommendation,
+    generateAdvancedRecommendation,
     normalizeSoilType,
     classifySlope,
     classifyTractorFit,
@@ -247,6 +249,99 @@ describe("recommendationService", () => {
 
       const utilization40 = classifyTractorFit(40);
       expect(utilization40.label).toBe("EXCESSIVE");
+    });
+  });
+
+  // ========================================================
+  // 5. ADVANCED SCORING E INTEGRACIÓN
+  // ========================================================
+  describe("Advanced Recommendation System", () => {
+    const terrain = { slope_percentage: 5, soil_type: "loam" };
+    const implement = { power_requirement_hp: 80 };
+    const requiredPower = 85;
+
+    const mockAdvancedTractors = [
+      {
+        tractor_id: 1,
+        name: "Cheap John Deere",
+        brand: "John Deere",
+        engine_power_hp: 100,
+        traction_type: "4WD",
+        status: "available",
+        price_usd: 40000,
+        fuel_consumption_lph: 12,
+      },
+      {
+        tractor_id: 2,
+        name: "Expensive Premium",
+        brand: "PremiumBrand",
+        engine_power_hp: 100,
+        traction_type: "4WD",
+        status: "available",
+        price_usd: 120000,
+        fuel_consumption_lph: 9,
+      },
+    ];
+
+    test("filtra por presupuesto máximo estricto", () => {
+      const result = generateAdvancedRecommendation({
+        terrain,
+        implement,
+        tractors: mockAdvancedTractors,
+        requiredPower,
+        filters: { budget: 50000 },
+        options: { limit: 5 },
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.recommendations).toHaveLength(1);
+      expect(result.recommendations[0].tractor.brand).toBe("John Deere");
+    });
+
+    test("aplica boost por preferencia de marca (brandPreference)", () => {
+      const result = generateAdvancedRecommendation({
+        terrain,
+        implement,
+        tractors: mockAdvancedTractors,
+        requiredPower,
+        filters: { brandPreference: "PremiumBrand" },
+        options: { limit: 5 },
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.recommendations[0].tractor.brand).toBe("PremiumBrand");
+      expect(result.recommendations[0].score.breakdown.brand_preference).toBe(
+        20,
+      );
+      expect(result.recommendations[1].score.breakdown.brand_preference).toBe(
+        0,
+      );
+    });
+
+    test("utiliza customWeights personalizados correctamente", () => {
+      const customWeights = {
+        power_match: 10,
+        price: 80,
+        brand_preference: 5,
+        fuel_efficiency: 5,
+      };
+
+      const result = generateAdvancedRecommendation({
+        terrain,
+        implement,
+        tractors: mockAdvancedTractors,
+        requiredPower,
+        filters: { budget: 150000 },
+        customWeights,
+        options: { limit: 5 },
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.recommendations[0].tractor.brand).toBe("John Deere");
+      expect(result.recommendations[0].score.breakdown.price).toBeGreaterThan(
+        result.recommendations[1].score.breakdown.price,
+      );
+      expect(result.recommendations[0].score.maxPossible).toBe(100);
     });
   });
 });
