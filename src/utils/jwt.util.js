@@ -6,7 +6,13 @@
 import jwt from 'jsonwebtoken';
 
 // Configuración JWT desde variables de entorno
-const JWT_SECRET = process.env.JWT_SECRET || 'clave_secreta_desarrollo';
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET is required in production');
+  }
+  console.warn('WARNING: Using default JWT_SECRET for development. DO NOT use in production!');
+  return 'clave_secreta_desarrollo';
+})();
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
 /**

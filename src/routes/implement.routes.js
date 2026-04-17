@@ -22,8 +22,6 @@ import {
 
 const router = Router();
 
-// Rutas públicas para el catálogo de implementos
-router.get("/", cacheMiddleware(86400), getAllImplements);
 // ==================== RUTAS PÚBLICAS ====================
 
 /**
@@ -80,7 +78,7 @@ router.get("/", cacheMiddleware(86400), getAllImplements);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get("/", paginationMiddleware(), getAllImplements);
+router.get("/", cacheMiddleware(86400), paginationMiddleware(), getAllImplements);
 
 /**
  * @swagger
@@ -313,30 +311,6 @@ router.get("/search", paginationMiddleware(), searchImplements);
  */
 router.get("/:id", getImplementById);
 
-// Rutas protegidas (solo admin)
-router.post(
-  "/",
-  verifyTokenMiddleware,
-  isAdmin,
-  validateImplement,
-  invalidateCacheMiddleware("*implements*"),
-  createImplement,
-);
-router.put(
-  "/:id",
-  verifyTokenMiddleware,
-  isAdmin,
-  validateImplement,
-  invalidateCacheMiddleware(["*implements*", "*recommendations*"]),
-  updateImplement,
-);
-router.delete(
-  "/:id",
-  verifyTokenMiddleware,
-  isAdmin,
-  invalidateCacheMiddleware(["*implements*", "*recommendations*"]),
-  deleteImplement,
-);
 // ==================== RUTAS PROTEGIDAS (ADMIN) ====================
 
 /**

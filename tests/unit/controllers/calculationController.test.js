@@ -114,8 +114,33 @@ describe('calculationController', () => {
   });
 
   describe('calculatePowerLoss()', () => {
+    test('retorna 401 cuando no hay usuario autenticado en req.user', async () => {
+      const req = {
+        body: {
+          tractor_id: 1,
+          terrain_id: 2,
+          working_speed_kmh: 8,
+          user_id: 999,
+        },
+      };
+      const res = createMockRes();
+
+      await callWrappedHandler(calculatePowerLoss, req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        message: 'Usuario no autenticado',
+      });
+      expect(mockTractorFindById).not.toHaveBeenCalled();
+      expect(mockClient.release).toHaveBeenCalled();
+    });
+
     test('retorna 400 cuando faltan campos requeridos', async () => {
-      const req = { body: { tractor_id: 1 } };
+      const req = {
+        body: { tractor_id: 1 },
+        user: { user_id: 10 },
+      };
       const res = createMockRes();
 
       await callWrappedHandler(calculatePowerLoss, req, res);
@@ -135,6 +160,7 @@ describe('calculationController', () => {
           terrain_id: 2,
           working_speed_kmh: 8,
         },
+        user: { user_id: 10 },
       };
       const res = createMockRes();
       mockTractorFindById.mockResolvedValue(null);
@@ -157,6 +183,7 @@ describe('calculationController', () => {
           terrain_id: 2,
           working_speed_kmh: 8,
         },
+        user: { user_id: 10 },
       };
       const res = createMockRes();
       mockTractorFindById.mockResolvedValue({ tractor_id: 1, weight_kg: 5000, engine_power_hp: 120 });
@@ -180,6 +207,9 @@ describe('calculationController', () => {
           carried_objects_weight_kg: 500,
           slippage_percent: 12,
           user_id: 77,
+        },
+        user: {
+          user_id: 22,
         },
       };
       const res = createMockRes();
@@ -234,7 +264,7 @@ describe('calculationController', () => {
       expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
       expect(mockLoggerInfo).toHaveBeenCalledWith('Power calculation completed', {
         queryId: 91,
-        userId: 77,
+        userId: 22,
         tractorId: 4,
         terrainId: 6,
         netPower: 101.5,
@@ -263,6 +293,7 @@ describe('calculationController', () => {
           terrain_id: 3,
           working_speed_kmh: 6,
         },
+        user: { user_id: 10 },
       };
       const res = createMockRes();
       const next = jest.fn();

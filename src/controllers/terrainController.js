@@ -1,32 +1,6 @@
 import Terrain from "../models/Terrain.js";
 import { asyncHandler } from "../middleware/error.middleware.js";
-
-const applyPagination = (items, paginationParams) => {
-  const { limit, offset, sort, order, page } = paginationParams;
-
-  // Ordenamiento dinámico
-  if (sort && items.length > 0 && items[0].hasOwnProperty(sort)) {
-    items.sort((a, b) => {
-      let valA = a[sort];
-      let valB = b[sort];
-
-      if (typeof valA === "string") valA = valA.toLowerCase();
-      if (typeof valB === "string") valB = valB.toLowerCase();
-
-      if (valA < valB) return order === "desc" ? 1 : -1;
-      if (valA > valB) return order === "desc" ? -1 : 1;
-      return 0;
-    });
-  }
-
-  const total = items.length;
-  const totalPages = Math.ceil(total / limit);
-  const start = offset;
-  const end = offset + limit;
-  const data = items.slice(start, end);
-
-  return { data, total, limit, page, totalPages };
-};
+import { applyPagination } from "../utils/pagination.util.js";
 
 // ============================================
 // OPERACIONES DE TERRENO (USUARIO AUTENTICADO)
@@ -39,19 +13,33 @@ const applyPagination = (items, paginationParams) => {
 export const getAllTerrains = asyncHandler(async (req, res) => {
   const userId = req.user.user_id;
   const terrains = await Terrain.findByUserId(userId);
-  const { data, total, limit, page, totalPages } = applyPagination(
-    terrains,
-    req.pagination,
-  );
+  const { limit = 10, offset = 0, sort = null, order = "asc", page = 1 } = req.pagination || {};
+
+  const sortedRows = [...terrains];
+
+  if (sort && sortedRows.length > 0 && Object.prototype.hasOwnProperty.call(sortedRows[0], sort)) {
+    sortedRows.sort((a, b) => {
+      let valA = a[sort];
+      let valB = b[sort];
+
+      if (typeof valA === "string") valA = valA.toLowerCase();
+      if (typeof valB === "string") valB = valB.toLowerCase();
+
+      if (valA < valB) return order === "desc" ? 1 : -1;
+      if (valA > valB) return order === "desc" ? -1 : 1;
+      return 0;
+    });
+  }
+
+  const rows = sortedRows.slice(offset, offset + limit);
+  const { data, pagination } = applyPagination(rows, sortedRows.length, page, limit);
 
   return res.json({
     success: true,
     data,
     pagination: {
-      page,
-      limit,
-      total,
-      totalPages,
+      ...pagination,
+      totalPages: pagination.pages,
     },
   });
 });

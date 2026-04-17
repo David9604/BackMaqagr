@@ -1,130 +1,112 @@
-# Dependencies
-/node_modules
+# ═══════════════════════════════════════════════════════════
+# MaqAgr Backend — .gitignore
+# ═══════════════════════════════════════════════════════════
+
+# ─── Dependencies ─────────────────────────────────────────
+/node_modules/
 /.pnp
 .pnp.js
-node_modules
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+.yarn/
+.npm/
 
-# local env files
-.env*.local
+# ─── Environment Variables ────────────────────────────────
 .env
-.env.local
+.env.*.local
 .env.development.local
 .env.test.local
 .env.production.local
-.env.env.staging.local
-.env.*.local
+.env.staging.local
 
-# Logs
+# ─── Logs ─────────────────────────────────────────────────
 /logs/
-logs/
-logs/out/
-/logs/out/
-
-# debug
 *.log
 *.log.*
-Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.yarn/*
+postman-cloud-agent.log
 
-# Documentation
+# ─── Documentation (local only) ───────────────────────────
 /docs/site/
 /docs/out/
 /documentation/out/
 /out/
-/.context/
 *.pdf
 *.docx
 *.doc
 *.pptx
 *.xlsx
+ASIGNACION_TAREAS.md
+PLAN_DESARROLLO.md
+ESTRUCTURA_SCRUM_JIRA.md
+SPRINT_2_PROPUESTA.md
+INFORME_TÉCNICO_DEL_PROYECTO_MaqAgr.md
 
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# Testing
-testing/
-coverage/
+# ─── Testing ──────────────────────────────────────────────
+/coverage/
 .nyc_output/
+test-results/
+testing/
+src/test-models.js
 
-# Postman
+# ─── Postman (keep only official collections) ─────────────
 postman/experimental/
 postman-reports/
 newman/
 *.postman_collection.json
 *.postman_environment.json
 *.postman_globals.json
-postman-cloud-agent.log
 !postman/MaqAgr-Backend.postman_collection.json
 !postman/MaqAgr-Dev.postman_environment.json
 !postman/MaqAgr-Staging.postman_environment.json
 
-# Build output
-dist/
-build/
+# ─── Build / Cache ────────────────────────────────────────
+/dist/
+/build/
 .cache/
+.eslintcache
+.prettiercache
 
-# Database
+# ─── Database ─────────────────────────────────────────────
 *.db
 *.sqlite
 *.sqlite3
 database/backups/
-migrations/*
 migrations/
 
-# OS files
+# ─── OS / Editor ──────────────────────────────────────────
 .DS_Store
 Thumbs.db
 *.swp
 *.swo
 *~
-
-# IDE files
 .vscode/
 .idea/
 *.sublime-project
 *.sublime-workspace
 .history/
 
-# Temporary files
+# ─── Runtime ──────────────────────────────────────────────
+pids/
+*.pid
+*.seed
+*.pid.lock
 tmp/
 temp/
 *.tmp
 
-# cache
+# ─── Context / AI scratch ─────────────────────────────────
+/.context/
 
-*.sublime-project
-*.sublime-workspace
-.cache/
-.eslintcache
-.prettiercache
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
-.eslintcache
-
-# Test files
-test-results/
-src/test-models.js
-
-# ─── Agent / Skills ──────────────────────────────────────────────────────────
+# ─── Agent Tools / Skills / AI (local only) ───────────────
 skills-lock.json
-.agent
+.agent/
 .agents/
+.atl/
+.claude/
+.cursor/
+.cursorrules
 
-# Personal documentation files
-ASIGNACION_TAREAS.md
-PLAN_DESARROLLO.md
-ESTRUCTURA_SCRUM_JIRA.md
-SPRINT_2_PROPUESTA.md
+# ─── SDD / Task artifacts (local only) ────────────────────
+tasks-*.json
+openspec/

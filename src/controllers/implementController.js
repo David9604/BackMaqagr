@@ -1,12 +1,15 @@
 import Implement from "../models/Implement.js";
 import { asyncHandler } from "../middleware/error.middleware.js";
+import { applyPagination } from "../utils/pagination.util.js";
 
-const applyPagination = (items, paginationParams) => {
-  const { limit, offset, sort, order, page } = paginationParams;
+export const getAllImplements = asyncHandler(async (req, res) => {
+  const implementsList = await Implement.getAll();
+  const { limit = 10, offset = 0, sort = null, order = "asc", page = 1 } = req.pagination || {};
 
-  // Ordenamiento dinámico
-  if (sort && items.length > 0 && items[0].hasOwnProperty(sort)) {
-    items.sort((a, b) => {
+  const sortedRows = [...implementsList];
+
+  if (sort && sortedRows.length > 0 && Object.prototype.hasOwnProperty.call(sortedRows[0], sort)) {
+    sortedRows.sort((a, b) => {
       let valA = a[sort];
       let valB = b[sort];
 
@@ -19,30 +22,15 @@ const applyPagination = (items, paginationParams) => {
     });
   }
 
-  const total = items.length;
-  const totalPages = Math.ceil(total / limit);
-  const start = offset;
-  const end = offset + limit;
-  const data = items.slice(start, end);
-
-  return { data, total, limit, page, totalPages };
-};
-
-export const getAllImplements = asyncHandler(async (req, res) => {
-  const implementsList = await Implement.getAll();
-  const { data, total, limit, page, totalPages } = applyPagination(
-    implementsList,
-    req.pagination,
-  );
+  const rows = sortedRows.slice(offset, offset + limit);
+  const { data, pagination } = applyPagination(rows, sortedRows.length, page, limit);
 
   return res.json({
     success: true,
     data,
     pagination: {
-      page,
-      limit,
-      total,
-      totalPages,
+      ...pagination,
+      totalPages: pagination.pages,
     },
   });
 });
@@ -176,19 +164,33 @@ export const searchImplements = asyncHandler(async (req, res) => {
 
 export const getAvailableImplements = asyncHandler(async (req, res) => {
   const implementsList = await Implement.getAvailable();
-  const { data, total, limit, page, totalPages } = applyPagination(
-    implementsList,
-    req.pagination,
-  );
+  const { limit = 10, offset = 0, sort = null, order = "asc", page = 1 } = req.pagination || {};
+
+  const sortedRows = [...implementsList];
+
+  if (sort && sortedRows.length > 0 && Object.prototype.hasOwnProperty.call(sortedRows[0], sort)) {
+    sortedRows.sort((a, b) => {
+      let valA = a[sort];
+      let valB = b[sort];
+
+      if (typeof valA === "string") valA = valA.toLowerCase();
+      if (typeof valB === "string") valB = valB.toLowerCase();
+
+      if (valA < valB) return order === "desc" ? 1 : -1;
+      if (valA > valB) return order === "desc" ? -1 : 1;
+      return 0;
+    });
+  }
+
+  const rows = sortedRows.slice(offset, offset + limit);
+  const { data, pagination } = applyPagination(rows, sortedRows.length, page, limit);
 
   return res.json({
     success: true,
     data,
     pagination: {
-      page,
-      limit,
-      total,
-      totalPages,
+      ...pagination,
+      totalPages: pagination.pages,
     },
   });
 });
