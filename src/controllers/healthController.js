@@ -5,6 +5,7 @@
  */
 
 import { pool } from '../config/db.js';
+import redisClient from '../config/redis.js';
 import logger from '../config/logger.js';
 import { asyncHandler } from '../utils/asyncHandler.util.js';
 
@@ -56,8 +57,16 @@ export const getHealthDetailed = asyncHandler(async (req, res) => {
     logger.error('Health check: database unreachable', { error: err.message, stack: err.stack });
   }
 
-  // ── Redis (placeholder — no instalado aún) ────────────────────────────────
-  checks.services.redis = { status: 'disconnected', note: 'not configured' };
+  // ── Redis ─────────────────────────────────────────────────────────────────
+  let redisStatus = { status: 'disconnected', latency_ms: null };
+  try {
+    const start = Date.now();
+    await redisClient.ping();
+    redisStatus = { status: 'connected', latency_ms: Date.now() - start };
+  } catch (err) {
+    redisStatus = { status: 'disconnected', latency_ms: null, error: err.message };
+  }
+  checks.services.redis = redisStatus;
 
   // ── System metrics ────────────────────────────────────────────────────────
   checks.system.memory = process.memoryUsage();

@@ -25,6 +25,11 @@ import { corsMiddleware } from "./middleware/cors.middleware.js";
 import { sanitizeInputs } from "./middleware/sanitize.middleware.js";
 
 dotenv.config();
+
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is required in production');
+}
+
 const app = express();
 
 // Trust proxy if we are behind a reverse proxy (e.g., Heroku, Nginx)

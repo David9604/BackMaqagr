@@ -27,6 +27,15 @@ export const calculatePowerLoss = asyncHandler(async (req, res) => {
   const client = await pool.connect();
   
   try {
+    const user_id = req.user?.user_id;
+
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado',
+      });
+    }
+
     // 1. Extracción de inputs
     const { 
       tractor_id, 
@@ -34,7 +43,6 @@ export const calculatePowerLoss = asyncHandler(async (req, res) => {
       working_speed_kmh, 
       carried_objects_weight_kg = 0,
       slippage_percent = 10,  // Default 10% si no se provee
-      user_id = req.body.user_id || 1 // Fallback ID 1 (Admin) para pruebas
     } = req.body;
 
     // Validación básica de campos requeridos
