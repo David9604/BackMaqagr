@@ -179,6 +179,7 @@ export const createTractor = asyncHandler(async (req, res) => {
     name,
     brand,
     model,
+    image_url,
     model_year,
     engine_power_hp,
     price,
@@ -207,6 +208,7 @@ export const createTractor = asyncHandler(async (req, res) => {
     name,
     brand,
     model,
+    image_url,
     model_year:
       model_year !== undefined && model_year !== null
         ? Number(model_year)
@@ -279,6 +281,7 @@ export const updateTractor = asyncHandler(async (req, res) => {
     name,
     brand,
     model,
+    image_url,
     model_year,
     engine_power_hp,
     price,
@@ -307,6 +310,7 @@ export const updateTractor = asyncHandler(async (req, res) => {
     name,
     brand,
     model,
+    image_url,
     model_year:
       model_year !== undefined && model_year !== null
         ? Number(model_year)

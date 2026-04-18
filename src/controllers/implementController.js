@@ -203,6 +203,7 @@ export const createImplement = asyncHandler(async (req, res) => {
   const {
     implement_name,
     brand,
+    image_url,
     power_requirement_hp,
     working_width_m,
     soil_type,
@@ -226,6 +227,7 @@ export const createImplement = asyncHandler(async (req, res) => {
   const payload = {
     implement_name,
     brand,
+    image_url,
     power_requirement_hp:
       power_requirement_hp !== undefined && power_requirement_hp !== null
         ? Number(power_requirement_hp)
@@ -278,6 +280,7 @@ export const updateImplement = asyncHandler(async (req, res) => {
   const {
     implement_name,
     brand,
+    image_url,
     power_requirement_hp,
     working_width_m,
     soil_type,
@@ -301,6 +304,7 @@ export const updateImplement = asyncHandler(async (req, res) => {
   const updateData = {
     implement_name,
     brand,
+    image_url,
     power_requirement_hp:
       power_requirement_hp !== undefined && power_requirement_hp !== null
         ? Number(power_requirement_hp)

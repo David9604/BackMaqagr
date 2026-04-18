@@ -3,20 +3,39 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const redisConfig = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: process.env.REDIS_PORT || 6379,
-  password: process.env.REDIS_PASSWORD || undefined,
-  lazyConnect: true,
-  retryStrategy(times) {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
-  },
-};
+// Support both URL-based connection (Upstash, Redis Cloud) and host/port/password (local, Memorystore)
+let redisClient;
 
-// Create a Redis client instance but don't connect automatically if lazyConnect is true
-// ioredis connects automatically by default.
-let redisClient = new Redis(redisConfig);
+if (process.env.REDIS_URL) {
+  // Parse URL manually to avoid ioredis URL parsing issues
+  // Format: rediss://default:PASSWORD@HOST:PORT
+  const url = new URL(process.env.REDIS_URL);
+  const redisConfig = {
+    host: url.hostname,
+    port: parseInt(url.port, 10) || 6379,
+    password: url.password,
+    tls: url.protocol === 'rediss:',
+    lazyConnect: true,
+    retryStrategy(times) {
+      const delay = Math.min(times * 50, 2000);
+      return delay;
+    },
+  };
+  redisClient = new Redis(redisConfig);
+} else {
+  // Host/port/password connection (local development, Memorystore)
+  const redisConfig = {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: process.env.REDIS_PORT || 6379,
+    password: process.env.REDIS_PASSWORD || undefined,
+    lazyConnect: true,
+    retryStrategy(times) {
+      const delay = Math.min(times * 50, 2000);
+      return delay;
+    },
+  };
+  redisClient = new Redis(redisConfig);
+}
 
 redisClient.on('connect', () => {
   console.log('Redis client connected');

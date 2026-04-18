@@ -7,6 +7,7 @@ export const validateTractor = (req, res, next) => {
   const {
     brand,
     model,
+    image_url,
     model_year,
     engine_power_hp,
     price,
@@ -72,6 +73,12 @@ export const validateTractor = (req, res, next) => {
     }
   }
 
+  if (image_url !== undefined && image_url !== null && `${image_url}`.trim() !== '') {
+    if (typeof image_url !== 'string' || !/^https?:\/\//i.test(image_url.trim())) {
+      errors.push('image_url debe ser una URL válida (http/https)');
+    }
+  }
+
   if (traction_type !== undefined && traction_type !== null && `${traction_type}`.trim() !== '') {
     if (!ALLOWED_TRACTION_TYPES.includes(traction_type)) {
       errors.push(`traction_type debe ser uno de: ${ALLOWED_TRACTION_TYPES.join(', ')}`);
@@ -103,6 +110,7 @@ export const validateImplement = (req, res, next) => {
   const {
     implement_name,
     brand,
+    image_url,
     power_requirement_hp,
     working_width_m,
     working_depth_cm,
@@ -174,6 +182,12 @@ export const validateImplement = (req, res, next) => {
   if (implement_type !== undefined && implement_type !== null && `${implement_type}`.trim() !== '') {
     if (!ALLOWED_IMPLEMENT_TYPES.includes(implement_type)) {
       errors.push(`implement_type debe ser uno de: ${ALLOWED_IMPLEMENT_TYPES.join(', ')}`);
+    }
+  }
+
+  if (image_url !== undefined && image_url !== null && `${image_url}`.trim() !== '') {
+    if (typeof image_url !== 'string' || !/^https?:\/\//i.test(image_url.trim())) {
+      errors.push('image_url debe ser una URL válida (http/https)');
     }
   }
 
