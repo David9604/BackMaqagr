@@ -123,7 +123,7 @@ jobs:
           echo "Service URL: ${{ steps.deploy.outputs.service_url }}"
           echo "Revision: ${{ steps.deploy.outputs.latest_revision }}"
 
-          cat <<EOF >> "${GITHUB_STEP_SUMMARY}"
+          cat <<'EOF' >> "${GITHUB_STEP_SUMMARY}"
           ## Deployment Summary
 
           - **Deployed image:** `${{ steps.deploy.outputs.deployed_image }}`
