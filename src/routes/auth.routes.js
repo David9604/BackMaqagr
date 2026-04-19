@@ -54,17 +54,13 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/AuthResponse'
  *             example:
- *               success: true
- *               message: "Usuario registrado exitosamente"
- *               data:
- *                 user:
- *                   user_id: 1
- *                   name: "Juan Pérez"
- *                   email: "juan@example.com"
- *                   role_id: 2
- *                   status: "active"
- *                   registration_date: "2026-02-13T10:00:00.000Z"
- *                 token: "eyJhbGciOiJIUzI1NiIs..."
+ *               token: "eyJhbGciOiJIUzI1NiIs..."
+ *               user:
+ *                 id: 1
+ *                 name: "Juan Pérez"
+ *                 email: "juan@example.com"
+ *               role: "user"
+ *               role_id: 2
  *       400:
  *         description: Datos de entrada inválidos o contraseña débil
  *         content:
@@ -76,17 +72,20 @@ const router = Router();
  *                 summary: Campos requeridos faltantes
  *                 value:
  *                   success: false
+ *                   code: "VALIDATION_ERROR"
  *                   message: "Datos de entrada incompletos"
  *                   errors: ["Nombre es requerido", "Email es requerido"]
  *               emailInvalido:
  *                 summary: Formato de email inválido
  *                 value:
  *                   success: false
+ *                   code: "VALIDATION_ERROR"
  *                   message: "Formato de email inválido"
  *               passwordDebil:
  *                 summary: Contraseña no cumple requisitos
  *                 value:
  *                   success: false
+ *                   code: "VALIDATION_ERROR"
  *                   message: "Contraseña no cumple requisitos"
  *                   errors: ["Debe tener al menos 8 caracteres", "Debe incluir una mayúscula"]
  *       409:
@@ -97,6 +96,7 @@ const router = Router();
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               success: false
+ *               code: "USER_ALREADY_EXISTS"
  *               message: "El email ya está registrado"
  *       500:
  *         description: Error interno del servidor
@@ -134,14 +134,13 @@ router.post("/register", publicLimiter, register);
  *             schema:
  *               $ref: '#/components/schemas/LoginResponse'
  *             example:
- *               success: true
- *               message: "Inicio de sesión exitoso"
- *               data:
- *                 token: "eyJhbGciOiJIUzI1NiIs..."
- *                 user:
- *                   name: "Juan Pérez"
- *                   email: "juan@example.com"
- *                   role_id: 2
+ *               token: "eyJhbGciOiJIUzI1NiIs..."
+ *               user:
+ *                 id: 1
+ *                 name: "Juan Pérez"
+ *                 email: "juan@example.com"
+ *               role: "user"
+ *               role_id: 2
  *       400:
  *         description: Email y contraseña son requeridos
  *         content:
@@ -150,6 +149,7 @@ router.post("/register", publicLimiter, register);
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               success: false
+ *               code: "VALIDATION_ERROR"
  *               message: "Email y contraseña son requeridos"
  *       401:
  *         description: Credenciales inválidas o usuario inactivo
@@ -162,11 +162,13 @@ router.post("/register", publicLimiter, register);
  *                 summary: Email o contraseña incorrectos
  *                 value:
  *                   success: false
+ *                   code: "INVALID_CREDENTIALS"
  *                   message: "Credenciales inválidas"
  *               usuarioInactivo:
  *                 summary: Usuario suspendido o inactivo
  *                 value:
  *                   success: false
+ *                   code: "UNAUTHORIZED"
  *                   message: "Usuario inactivo o suspendido"
  *       500:
  *         description: Error interno del servidor

@@ -55,7 +55,6 @@ const createMockReq = (
   user, // Importante: terrainController usa req.user
   pagination: {
     limit: 10,
-    offset: 0,
     sort: null,
     order: "asc",
     page: 1,
@@ -103,7 +102,7 @@ describe("terrainController", () => {
   // ========================================================
   describe("getAllTerrains()", () => {
     test("retorna 200 y lista de terrenos del usuario", async () => {
-      const req = createMockReq({}, {}, { limit: "10", offset: "0" });
+      const req = createMockReq({}, {}, { limit: "10", page: "1" });
       const res = createMockRes();
       const next = createMockNext();
 
@@ -134,7 +133,7 @@ describe("terrainController", () => {
         { id: 2, implement_name: "ZXY", terrain_name: "ZXY", name: "ZXY" }
       ];
       const req = createMockReq();
-      req.pagination = { limit: 10, offset: 0, sort: "name", order: "desc", page: 1 };
+      req.pagination = { limit: 10, sort: "name", order: "desc", page: 1 };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -156,7 +155,7 @@ describe("terrainController", () => {
         { id: 1, val: 80 }
       ];
       const req = createMockReq();
-      req.pagination = { limit: 10, offset: 0, sort: "val", order: "asc", page: 1 };
+      req.pagination = { limit: 10, sort: "val", order: "asc", page: 1 };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -178,7 +177,7 @@ describe("terrainController", () => {
         { id: 2, name: "AAA", terrain_name: "AAA", implement_name: "AAA" }
       ];
       const req = createMockReq();
-      req.pagination = { limit: 10, offset: 0, sort: "name", order: "asc", page: 1 };
+      req.pagination = { limit: 10, sort: "name", order: "asc", page: 1 };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -230,7 +229,11 @@ describe("terrainController", () => {
 
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ message: "Terreno no encontrado" }),
+        expect.objectContaining({
+          success: false,
+          code: "NOT_FOUND",
+          message: "Terreno no encontrado",
+        }),
       );
     });
 
@@ -295,7 +298,12 @@ describe("terrainController", () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ success: false, errors: expect.any(Array) }),
+        expect.objectContaining({
+          success: false,
+          code: "VALIDATION_ERROR",
+          message: "Error de validación",
+          errors: expect.any(Array),
+        }),
       );
       expect(mockCreate).not.toHaveBeenCalled();
     });
@@ -342,6 +350,13 @@ describe("terrainController", () => {
       await callHandler(updateTerrain, req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          code: "NOT_FOUND",
+          message: "Terreno no encontrado",
+        }),
+      );
       expect(mockUpdate).not.toHaveBeenCalled();
     });
 
@@ -356,6 +371,7 @@ describe("terrainController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "ID de terreno inválido",
         }),
       );
@@ -374,6 +390,7 @@ describe("terrainController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "area_hectares debe estar entre 0.1 y 10,000 hectáreas",
         }),
       );
@@ -414,6 +431,13 @@ describe("terrainController", () => {
       await callHandler(deleteTerrain, req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          code: "NOT_FOUND",
+          message: "Terreno no encontrado",
+        }),
+      );
     });
 
     test("con ID inválido → 400", async () => {
@@ -427,6 +451,7 @@ describe("terrainController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "ID de terreno inválido",
         }),
       );

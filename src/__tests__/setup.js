@@ -11,8 +11,7 @@ process.env.JWT_SECRET = 'test-secret-key-for-testing-only';
 process.env.JWT_EXPIRES_IN = '1h';
 process.env.BCRYPT_SALT_ROUNDS = '4'; // Menor para tests más rápidos
 
-// Configurar timeout global
-jest.setTimeout(10000);
+// Timeout gestionado por cada configuración de Jest (unit/e2e/integration)
 
 // Mock de console.error para tests más limpios (opcional)
 global.console = {

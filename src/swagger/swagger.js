@@ -47,10 +47,6 @@ Authorization: Bearer <tu_token>
         url: 'http://localhost:4000',
         description: 'Servidor de desarrollo',
       },
-      {
-        url: 'http://localhost:3000',
-        description: 'Servidor de staging',
-      },
     ],
     components: {
       securitySchemes: {
@@ -114,11 +110,29 @@ const swaggerSpec = swaggerJsdoc(options);
  * @param {import('express').Application} app - Instancia de Express
  */
 export const setupSwagger = (app) => {
-  // Swagger UI
+  // Dynamic spec endpoint — injects current host as server URL in production
+  app.get('/api-docs.json', (req, res) => {
+    const protocol = req.headers['x-forwarded-proto'] || 'https';
+    const host = req.headers.host;
+
+    const dynamicSpec = {
+      ...swaggerSpec,
+      servers: [{
+        url: `${protocol}://${host}`,
+        description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server',
+      }],
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.send(dynamicSpec);
+  });
+
+  // Swagger UI — fetches spec from /api-docs.json for dynamic server URL
   app.use(
     '/api-docs',
     swaggerUi.serve,
-    swaggerUi.setup(swaggerSpec, {
+    swaggerUi.setup(null, {
+      swaggerUrl: '/api-docs.json',
       customCss: '.swagger-ui .topbar { display: none }',
       customSiteTitle: 'MaqAgr API Docs',
       swaggerOptions: {
@@ -130,12 +144,6 @@ export const setupSwagger = (app) => {
       },
     })
   );
-
-  // Endpoint JSON de la spec
-  app.get('/api-docs.json', (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(swaggerSpec);
-  });
 };
 
 export default swaggerSpec;

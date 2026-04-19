@@ -20,6 +20,7 @@ class Implement {
     const {
       implement_name,
       brand,
+      image_url = null,
       power_requirement_hp,
       working_width_m,
       soil_type,
@@ -31,15 +32,16 @@ class Implement {
 
     const query = `
       INSERT INTO implement (
-        implement_name, brand, power_requirement_hp, working_width_m,
+        implement_name, brand, image_url, power_requirement_hp, working_width_m,
         soil_type, working_depth_cm, weight_kg, implement_type, status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
     `;
     const values = [
       implement_name,
       brand,
+      image_url,
       power_requirement_hp,
       working_width_m,
       soil_type,
@@ -57,6 +59,7 @@ class Implement {
     const {
       implement_name,
       brand,
+      image_url,
       power_requirement_hp,
       working_width_m,
       soil_type,
@@ -70,19 +73,21 @@ class Implement {
       UPDATE implement 
       SET implement_name = COALESCE($1, implement_name),
           brand = COALESCE($2, brand),
-          power_requirement_hp = COALESCE($3, power_requirement_hp),
-          working_width_m = COALESCE($4, working_width_m),
-          soil_type = COALESCE($5, soil_type),
-          working_depth_cm = COALESCE($6, working_depth_cm),
-          weight_kg = COALESCE($7, weight_kg),
-          implement_type = COALESCE($8, implement_type),
-          status = COALESCE($9, status)
-      WHERE implement_id = $10
+          image_url = COALESCE($3, image_url),
+          power_requirement_hp = COALESCE($4, power_requirement_hp),
+          working_width_m = COALESCE($5, working_width_m),
+          soil_type = COALESCE($6, soil_type),
+          working_depth_cm = COALESCE($7, working_depth_cm),
+          weight_kg = COALESCE($8, weight_kg),
+          implement_type = COALESCE($9, implement_type),
+          status = COALESCE($10, status)
+      WHERE implement_id = $11
       RETURNING *
     `;
     const values = [
       implement_name,
       brand,
+      image_url,
       power_requirement_hp,
       working_width_m,
       soil_type,

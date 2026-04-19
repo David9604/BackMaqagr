@@ -72,7 +72,7 @@ newman/
 *.sqlite
 *.sqlite3
 database/backups/
-migrations/
+/migrations/
 
 # ─── OS / Editor ──────────────────────────────────────────
 .DS_Store

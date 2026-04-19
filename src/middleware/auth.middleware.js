@@ -4,12 +4,7 @@
  */
 
 import { verifyToken } from '../utils/jwt.util.js';
-
-const ROLE_NAME_TO_ID = {
-    admin: 1,
-    user: 2,
-    operator: 3
-};
+import { ROLE_NAME_TO_ID } from '../utils/role.util.js';
 
 const normalizeRoleToId = (role) => {
     if (typeof role === 'number') return role;
@@ -42,6 +37,7 @@ export const verifyTokenMiddleware = (req, res, next) => {
         if (!authHeader) {
             return res.status(401).json({
                 success: false,
+                code: 'UNAUTHORIZED',
                 message: 'Token no proporcionado'
             });
         }
@@ -52,6 +48,7 @@ export const verifyTokenMiddleware = (req, res, next) => {
         if (!token) {
             return res.status(401).json({
                 success: false,
+                code: 'UNAUTHORIZED',
                 message: 'Formato de token inválido'
             });
         }
@@ -67,6 +64,7 @@ export const verifyTokenMiddleware = (req, res, next) => {
         // Token inválido o expirado
         return res.status(401).json({
             success: false,
+            code: 'UNAUTHORIZED',
             message: 'Token inválido o expirado'
         });
     }
@@ -84,6 +82,7 @@ export const requireRole = (requiredRoles) => {
         if (!req.user) {
             return res.status(401).json({
                 success: false,
+                code: 'UNAUTHORIZED',
                 message: 'No autenticado'
             });
         }
@@ -92,6 +91,7 @@ export const requireRole = (requiredRoles) => {
         if (requiredRoleIds.length === 0) {
             return res.status(500).json({
                 success: false,
+                code: 'INTERNAL_ERROR',
                 message: 'Configuración de roles inválida'
             });
         }
@@ -100,6 +100,7 @@ export const requireRole = (requiredRoles) => {
             const rolesLabel = requiredList.map(normalizeRoleLabel).join(' o ');
             return res.status(403).json({
                 success: false,
+                code: 'FORBIDDEN',
                 message: `Acceso denegado: se requiere rol de ${rolesLabel}`
             });
         }

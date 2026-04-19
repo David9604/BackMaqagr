@@ -32,6 +32,11 @@ export const schemas = {
         type: 'boolean',
         example: false,
       },
+      code: {
+        type: 'string',
+        example: 'VALIDATION_ERROR',
+        description: 'Código estable para manejo de errores en frontend',
+      },
       message: {
         type: 'string',
         example: 'Error en la operación',
@@ -61,7 +66,8 @@ export const schemas = {
         properties: {
           total: { type: 'integer', example: 50 },
           limit: { type: 'integer', example: 10 },
-          offset: { type: 'integer', example: 0 },
+          page: { type: 'integer', example: 1 },
+          pages: { type: 'integer', example: 5 },
         },
       },
     },
@@ -163,54 +169,49 @@ export const schemas = {
   AuthResponse: {
     type: 'object',
     properties: {
-      success: { type: 'boolean', example: true },
-      message: { type: 'string', example: 'Usuario registrado exitosamente' },
-      data: {
+      token: {
+        type: 'string',
+        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        description: 'Token JWT para autenticación',
+      },
+      user: {
         type: 'object',
         properties: {
-          user: {
-            type: 'object',
-            properties: {
-              user_id: { type: 'integer', example: 1 },
-              name: { type: 'string', example: 'Juan Pérez' },
-              email: { type: 'string', example: 'juan@example.com' },
-              role_id: { type: 'integer', example: 2 },
-              status: { type: 'string', example: 'active' },
-              registration_date: { type: 'string', format: 'date-time' },
-            },
-          },
-          token: {
-            type: 'string',
-            example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-            description: 'Token JWT para autenticación',
-          },
+          id: { type: 'integer', example: 1 },
+          name: { type: 'string', example: 'Juan Pérez' },
+          email: { type: 'string', example: 'juan@example.com' },
         },
       },
+      role: {
+        type: 'string',
+        enum: ['admin', 'user', 'operator'],
+        example: 'user',
+      },
+      role_id: { type: 'integer', example: 2 },
     },
   },
 
   LoginResponse: {
     type: 'object',
     properties: {
-      success: { type: 'boolean', example: true },
-      message: { type: 'string', example: 'Inicio de sesión exitoso' },
-      data: {
+      token: {
+        type: 'string',
+        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      },
+      user: {
         type: 'object',
         properties: {
-          token: {
-            type: 'string',
-            example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-          },
-          user: {
-            type: 'object',
-            properties: {
-              name: { type: 'string', example: 'Juan Pérez' },
-              email: { type: 'string', example: 'juan@example.com' },
-              role_id: { type: 'integer', example: 2 },
-            },
-          },
+          id: { type: 'integer', example: 1 },
+          name: { type: 'string', example: 'Juan Pérez' },
+          email: { type: 'string', example: 'juan@example.com' },
         },
       },
+      role: {
+        type: 'string',
+        enum: ['admin', 'user', 'operator'],
+        example: 'user',
+      },
+      role_id: { type: 'integer', example: 2 },
     },
   },
 
@@ -224,6 +225,7 @@ export const schemas = {
       name: { type: 'string', example: 'John Deere 6130M' },
       brand: { type: 'string', example: 'John Deere' },
       model: { type: 'string', example: '6130M' },
+      image_url: { type: 'string', format: 'uri', example: 'https://storage.googleapis.com/maqagr-143f3.firebasestorage.app/tractors/john-deere-5075e.jpg', nullable: true },
       model_year: { type: 'integer', example: 2024, nullable: true },
       engine_power_hp: { type: 'number', format: 'float', example: 130.0 },
       price: { type: 'number', format: 'float', example: 85000.0, nullable: true },
@@ -245,6 +247,7 @@ export const schemas = {
       name: { type: 'string', example: 'John Deere 6130M' },
       brand: { type: 'string', example: 'John Deere' },
       model: { type: 'string', example: '6130M' },
+      image_url: { type: 'string', format: 'uri', example: 'https://storage.googleapis.com/maqagr-143f3.firebasestorage.app/tractors/john-deere-5075e.jpg' },
       model_year: { type: 'integer', example: 2024 },
       engine_power_hp: { type: 'number', format: 'float', example: 130.0, description: 'Potencia del motor en HP (debe ser positivo)' },
       price: { type: 'number', format: 'float', example: 85000.0, description: 'Precio de referencia del tractor (debe ser positivo)' },
@@ -265,6 +268,7 @@ export const schemas = {
       name: { type: 'string', example: 'John Deere 6130M Updated' },
       brand: { type: 'string', example: 'John Deere' },
       model: { type: 'string', example: '6130M' },
+      image_url: { type: 'string', format: 'uri', example: 'https://storage.googleapis.com/maqagr-143f3.firebasestorage.app/tractors/john-deere-5075e.jpg' },
       model_year: { type: 'integer', example: 2025 },
       engine_power_hp: { type: 'number', format: 'float', example: 135.0 },
       price: { type: 'number', format: 'float', example: 87000.0 },
@@ -288,6 +292,7 @@ export const schemas = {
       implement_id: { type: 'integer', example: 1 },
       implement_name: { type: 'string', example: 'Arado de discos 3 cuerpos' },
       brand: { type: 'string', example: 'Baldan' },
+      image_url: { type: 'string', format: 'uri', example: 'https://storage.googleapis.com/maqagr-143f3.firebasestorage.app/implements/disc-plow.jpg', nullable: true },
       power_requirement_hp: { type: 'number', format: 'float', example: 85.0 },
       working_width_m: { type: 'number', format: 'float', example: 1.2 },
       soil_type: { type: 'string', example: 'clay', description: 'Tipo de suelo compatible' },
@@ -308,6 +313,7 @@ export const schemas = {
     properties: {
       implement_name: { type: 'string', example: 'Arado de discos 3 cuerpos' },
       brand: { type: 'string', example: 'Baldan' },
+      image_url: { type: 'string', format: 'uri', example: 'https://storage.googleapis.com/maqagr-143f3.firebasestorage.app/implements/disc-plow.jpg' },
       power_requirement_hp: { type: 'number', format: 'float', example: 85.0 },
       working_width_m: { type: 'number', format: 'float', example: 1.2 },
       soil_type: { type: 'string', example: 'clay' },
@@ -327,6 +333,7 @@ export const schemas = {
     properties: {
       implement_name: { type: 'string', example: 'Arado actualizado' },
       brand: { type: 'string', example: 'Baldan' },
+      image_url: { type: 'string', format: 'uri', example: 'https://storage.googleapis.com/maqagr-143f3.firebasestorage.app/implements/disc-plow.jpg' },
       power_requirement_hp: { type: 'number', format: 'float', example: 90.0 },
       working_width_m: { type: 'number', format: 'float', example: 1.4 },
       soil_type: { type: 'string', example: 'loam' },

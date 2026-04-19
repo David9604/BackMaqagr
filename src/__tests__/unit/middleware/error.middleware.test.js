@@ -57,6 +57,7 @@ describe('error.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(404);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'NOT_FOUND',
         message: 'La ruta /api/nonexistent/route no existe en este servidor'
       });
     });
@@ -73,6 +74,7 @@ describe('error.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(404);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'NOT_FOUND',
         message: 'La ruta /api/missing no existe en este servidor'
       });
     });
@@ -90,6 +92,7 @@ describe('error.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(500);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'INTERNAL_ERROR',
         message: 'Error genérico'
       });
     });
@@ -106,6 +109,7 @@ describe('error.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(418);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'INTERNAL_ERROR',
         message: 'Error personalizado'
       });
     });
@@ -122,6 +126,7 @@ describe('error.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'VALIDATION_ERROR',
         message: 'Error de validación'
       });
     });
@@ -138,6 +143,7 @@ describe('error.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'UNAUTHORIZED',
         message: 'Token inválido'
       });
     });
@@ -154,6 +160,7 @@ describe('error.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'UNAUTHORIZED',
         message: 'Token expirado'
       });
     });
@@ -170,6 +177,7 @@ describe('error.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'VALIDATION_ERROR',
         message: 'Formato de ID inválido'
       });
     });
@@ -192,12 +200,13 @@ describe('error.middleware.js', () => {
 
         // Assert
         expect(mockRes.status).toHaveBeenCalledWith(expectedStatus);
-        expect(mockRes.json).toHaveBeenCalledWith(
-          expect.objectContaining({
-            success: false,
-            message: expectedMessage
-          })
-        );
+      expect(mockRes.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          code: expect.any(String),
+          message: expectedMessage
+        })
+      );
       });
     });
 
@@ -215,6 +224,7 @@ describe('error.middleware.js', () => {
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: 'INTERNAL_ERROR',
           message: 'Error en desarrollo',
           error: expect.objectContaining({
             message: 'Error en desarrollo',
@@ -239,6 +249,7 @@ describe('error.middleware.js', () => {
       expect(jsonCall).not.toHaveProperty('error');
       expect(jsonCall).toEqual({
         success: false,
+        code: 'INTERNAL_ERROR',
         message: 'Error en producción'
       });
     });
@@ -255,6 +266,7 @@ describe('error.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(500);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'INTERNAL_ERROR',
         message: 'Error en la base de datos'
       });
     });

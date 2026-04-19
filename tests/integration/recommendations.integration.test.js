@@ -38,7 +38,7 @@ describe('Flujo de Recomendaciones - Integración', () => {
     // 1. Registrar usuario de prueba
     const { token, user } = await registerAndGetToken();
     userToken = token;
-    userId = user.user_id;
+    userId = user.id;
 
     // 2. Crear terrenos de prueba
     terrain = await createTestTerrain(userToken, TEST_TERRAIN);

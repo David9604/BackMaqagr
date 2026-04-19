@@ -15,16 +15,12 @@ export const paginationMiddleware = () => {
             limit = 100;
         }
 
-        // Calcular offset
-        const offset = (page - 1) * limit;
-
         // Agregar a req.pagination
         req.pagination = {
             page,
             limit,
             sort,
             order,
-            offset
         };
 
         next();

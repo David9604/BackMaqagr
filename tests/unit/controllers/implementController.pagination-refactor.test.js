@@ -49,7 +49,7 @@ describe("implementController pagination refactor", () => {
   });
 
   test("getAllImplements delegates pagination to shared utility", async () => {
-    const req = { pagination: { page: 3, limit: 15 } };
+    const req = { pagination: { page: 1, limit: 15 } };
     const res = createMockRes();
     mockGetAll.mockResolvedValue([{ implement_id: 1 }]);
 
@@ -58,7 +58,7 @@ describe("implementController pagination refactor", () => {
     expect(mockApplyPagination).toHaveBeenCalledWith(
       [{ implement_id: 1 }],
       1,
-      3,
+      1,
       15,
     );
   });

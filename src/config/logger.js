@@ -84,10 +84,12 @@ const logger = createLogger({
   levels: { error: 0, warn: 1, info: 2, http: 3, debug: 4 },
   level: isDev ? 'debug' : 'info',
   transports: [
+    // En test mantenemos un transporte silencioso para evitar warnings internos de Winston
+    ...(isTest ? [new transports.Console({ silent: true })] : []),
     // Console sólo fuera de test para no ensuciar la salida de Jest
-    ...(isTest ? [] : [new transports.Console({ format: consoleFormat, level: isDev ? 'debug' : 'warn' })]),
+    ...(!isTest ? [new transports.Console({ format: consoleFormat, level: isDev ? 'debug' : 'warn' })] : []),
     // Archivos siempre (excepto test para no crear archivos durante pruebas)
-    ...(isTest ? [] : fileTransports),
+    ...(!isTest ? fileTransports : []),
   ],
   // No lanzar excepciones si un transporte falla
   exitOnError: false,

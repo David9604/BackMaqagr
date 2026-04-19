@@ -11,7 +11,6 @@ import { asyncHandler } from "../middleware/error.middleware.js";
 import { AppError } from "../utils/errors.util.js";
 import {
   successResponse,
-  createdResponse,
   unauthorizedResponse,
   conflictResponse,
   notFoundResponse,
@@ -23,6 +22,7 @@ import {
   getPasswordValidationErrors,
 } from "../utils/validators.util.js";
 import logger from "../utils/logger.js";
+import { buildAuthPayload } from "../utils/role.util.js";
 
 // Constantes
 const SALT_ROUNDS = 10;
@@ -47,7 +47,12 @@ export const register = asyncHandler(async (req, res) => {
 
   // Validar formato de email
   if (!isValidEmail(email)) {
-    throw new AppError("Formato de email inválido", 400);
+    return validationErrorResponse(
+      res,
+      ["Email con formato inválido"],
+      "Formato de email inválido",
+      "VALIDATION_ERROR",
+    );
   }
 
   // Validar contraseña fuerte
@@ -67,7 +72,11 @@ export const register = asyncHandler(async (req, res) => {
   );
 
   if (existingUser.rows.length > 0) {
-    return conflictResponse(res, "El email ya está registrado");
+    return conflictResponse(
+      res,
+      "El email ya está registrado",
+      "USER_ALREADY_EXISTS",
+    );
   }
 
   // Hashear contraseña con bcrypt
@@ -98,20 +107,16 @@ export const register = asyncHandler(async (req, res) => {
   });
 
   // Respuesta exitosa
-  return createdResponse(
-    res,
-    {
+  return res.status(201).json(
+    buildAuthPayload({
+      token,
       user: {
         user_id: newUser.user_id,
         name: newUser.name,
         email: newUser.email,
         role_id: newUser.role_id,
-        status: newUser.status,
-        registration_date: newUser.registration_date,
       },
-      token,
-    },
-    "Usuario registrado exitosamente",
+    }),
   );
 });
 
@@ -124,7 +129,12 @@ export const login = asyncHandler(async (req, res) => {
 
   // Validar datos de entrada
   if (!email || !password) {
-    throw new AppError("Email y contraseña son requeridos", 400);
+    return validationErrorResponse(
+      res,
+      ["Email y contraseña son requeridos"],
+      "Email y contraseña son requeridos",
+      "VALIDATION_ERROR",
+    );
   }
 
   // Buscar usuario por email usando modelo User
@@ -135,7 +145,11 @@ export const login = asyncHandler(async (req, res) => {
     logger.warn("Failed login attempt: user not found", {
       email: email.toLowerCase(),
     });
-    return unauthorizedResponse(res, "Credenciales inválidas");
+    return unauthorizedResponse(
+      res,
+      "Credenciales inválidas",
+      "INVALID_CREDENTIALS",
+    );
   }
 
   // Verificar que el usuario esté activo
@@ -145,7 +159,11 @@ export const login = asyncHandler(async (req, res) => {
       userId: user.user_id,
       status: user.status,
     });
-    return unauthorizedResponse(res, "Usuario inactivo o suspendido");
+    return unauthorizedResponse(
+      res,
+      "Usuario inactivo o suspendido",
+      "UNAUTHORIZED",
+    );
   }
 
   // Validar contraseña con bcrypt.compare()
@@ -156,7 +174,11 @@ export const login = asyncHandler(async (req, res) => {
       email: email.toLowerCase(),
       userId: user.user_id,
     });
-    return unauthorizedResponse(res, "Credenciales inválidas");
+    return unauthorizedResponse(
+      res,
+      "Credenciales inválidas",
+      "INVALID_CREDENTIALS",
+    );
   }
 
   // Generar token JWT con datos del usuario
@@ -177,17 +199,16 @@ export const login = asyncHandler(async (req, res) => {
   });
 
   // Respuesta exitosa con token y datos del usuario
-  return successResponse(
-    res,
-    {
+  return res.status(200).json(
+    buildAuthPayload({
       token,
       user: {
+        user_id: user.user_id,
         name: user.name,
         email: user.email,
         role_id: user.role_id,
       },
-    },
-    "Inicio de sesión exitoso",
+    }),
   );
 });
 

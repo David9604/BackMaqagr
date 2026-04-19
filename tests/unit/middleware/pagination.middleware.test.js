@@ -23,7 +23,7 @@ describe('Pagination Middleware', () => {
         expect(mockReq.pagination.limit).toBe(10);
         expect(mockReq.pagination.sort).toBe('id');
         expect(mockReq.pagination.order).toBe('asc');
-        expect(mockReq.pagination.offset).toBe(0);
+        expect(mockReq.pagination).not.toHaveProperty('offset');
         expect(mockNext).toHaveBeenCalled();
     });
 
@@ -42,7 +42,7 @@ describe('Pagination Middleware', () => {
         expect(mockReq.pagination.limit).toBe(20);
         expect(mockReq.pagination.sort).toBe('name');
         expect(mockReq.pagination.order).toBe('desc');
-        expect(mockReq.pagination.offset).toBe(40); // (3 - 1) * 20
+        expect(mockReq.pagination).not.toHaveProperty('offset');
         expect(mockNext).toHaveBeenCalled();
     });
 
@@ -55,7 +55,7 @@ describe('Pagination Middleware', () => {
         middleware(mockReq, mockRes, mockNext);
 
         expect(mockReq.pagination.limit).toBe(100);
-        expect(mockReq.pagination.offset).toBe(0); // page 1, limit 100 => 0
+        expect(mockReq.pagination).not.toHaveProperty('offset');
         expect(mockNext).toHaveBeenCalled();
     });
 
@@ -70,7 +70,7 @@ describe('Pagination Middleware', () => {
 
         expect(mockReq.pagination.page).toBe(1);
         expect(mockReq.pagination.limit).toBe(10);
-        expect(mockReq.pagination.offset).toBe(0);
+        expect(mockReq.pagination).not.toHaveProperty('offset');
         expect(mockNext).toHaveBeenCalled();
     });
 
@@ -85,7 +85,7 @@ describe('Pagination Middleware', () => {
 
         expect(mockReq.pagination.page).toBe(1);
         expect(mockReq.pagination.limit).toBe(10);
-        expect(mockReq.pagination.offset).toBe(0);
+        expect(mockReq.pagination).not.toHaveProperty('offset');
         expect(mockNext).toHaveBeenCalled();
     });
 });

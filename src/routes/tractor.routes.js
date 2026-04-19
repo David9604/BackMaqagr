@@ -38,11 +38,11 @@ const router = Router();
  *           default: 10
  *         description: Cantidad de registros por página
  *       - in: query
- *         name: offset
+ *         name: page
  *         schema:
  *           type: integer
- *           default: 0
- *         description: Número de registros a saltar
+ *           default: 1
+ *         description: Número de página
  *     responses:
  *       200:
  *         description: Lista de tractores obtenida exitosamente
@@ -61,15 +61,18 @@ const router = Router();
  *                 pagination:
  *                   type: object
  *                   properties:
+ *                     page:
+ *                       type: integer
+ *                       example: 1
  *                     total:
  *                       type: integer
  *                       example: 25
  *                     limit:
  *                       type: integer
  *                       example: 10
- *                     offset:
+ *                     totalPages:
  *                       type: integer
- *                       example: 0
+ *                       example: 3
  *       500:
  *         description: Error interno del servidor
  *         content:
@@ -94,11 +97,11 @@ router.get("/", paginationMiddleware(), getAllTractors);
  *           default: 10
  *         description: Cantidad de registros por página
  *       - in: query
- *         name: offset
+ *         name: page
  *         schema:
  *           type: integer
- *           default: 0
- *         description: Número de registros a saltar
+ *           default: 1
+ *         description: Número de página
  *     responses:
  *       200:
  *         description: Lista de tractores disponibles
@@ -117,11 +120,13 @@ router.get("/", paginationMiddleware(), getAllTractors);
  *                 pagination:
  *                   type: object
  *                   properties:
+ *                     page:
+ *                       type: integer
  *                     total:
  *                       type: integer
  *                     limit:
  *                       type: integer
- *                     offset:
+ *                     totalPages:
  *                       type: integer
  *       500:
  *         description: Error interno del servidor

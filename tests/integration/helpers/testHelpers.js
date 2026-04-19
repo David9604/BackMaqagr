@@ -13,6 +13,16 @@ import { cleanTestDB, seedTestDB } from '../../../src/config/db.test.js';
 // Cliente HTTP de test
 export const request = supertest(app);
 
+const normalizeAuthUser = (user) => {
+  if (!user || typeof user !== 'object') return user;
+
+  return {
+    ...user,
+    id: user.id ?? user.user_id,
+    user_id: user.user_id ?? user.id,
+  };
+};
+
 // ============================================
 // DATOS DE PRUEBA
 // ============================================
@@ -66,8 +76,8 @@ export async function registerAndGetToken(userData = TEST_USER) {
   }
 
   return {
-    token: res.body.data.token,
-    user: res.body.data.user,
+    token: res.body.token,
+    user: normalizeAuthUser(res.body.user),
   };
 }
 
@@ -87,8 +97,8 @@ export async function loginAndGetToken(email, password) {
   }
 
   return {
-    token: res.body.data.token,
-    user: res.body.data.user,
+    token: res.body.token,
+    user: normalizeAuthUser(res.body.user),
   };
 }
 

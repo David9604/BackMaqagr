@@ -174,15 +174,14 @@ describe("authController", () => {
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          success: true,
-          data: expect.objectContaining({
-            user: expect.objectContaining({
-              user_id: 1,
-              name: "Juan Pérez",
-              email: "juan@test.com",
-            }),
-            token: "fake-jwt-token-register",
+          token: "fake-jwt-token-register",
+          user: expect.objectContaining({
+            id: 1,
+            name: "Juan Pérez",
+            email: "juan@test.com",
           }),
+          role: "user",
+          role_id: 2,
         }),
       );
       expect(mockBcryptHash).toHaveBeenCalledWith("Password123", 10);
@@ -209,6 +208,7 @@ describe("authController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "USER_ALREADY_EXISTS",
           message: expect.stringContaining("ya está registrado"),
         }),
       );
@@ -227,12 +227,15 @@ describe("authController", () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ success: false }),
+        expect.objectContaining({
+          success: false,
+          code: "VALIDATION_ERROR",
+        }),
       );
       expect(mockPoolQuery).not.toHaveBeenCalled();
     });
 
-    test("con email inválido → next(error) 400", async () => {
+    test("con email inválido → 400 validation", async () => {
       const req = createMockReq({
         name: "Juan Pérez",
         email: "email-invalido",
@@ -243,10 +246,15 @@ describe("authController", () => {
 
       await callHandler(register, req, res, next);
 
-      expect(next).toHaveBeenCalled();
-      const error = next.mock.calls[0][0];
-      expect(error.statusCode).toBe(400);
-      expect(error.message).toContain("Formato de email inválido");
+      expect(next).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          code: "VALIDATION_ERROR",
+          message: "Formato de email inválido",
+        }),
+      );
     });
 
     test("con contraseña débil → 400 validation", async () => {
@@ -264,6 +272,7 @@ describe("authController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "Contraseña no cumple requisitos",
           errors: expect.arrayContaining([
             expect.stringContaining("8 caracteres"),
@@ -297,14 +306,14 @@ describe("authController", () => {
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          success: true,
-          data: expect.objectContaining({
-            token: "fake-jwt-token-login",
-            user: expect.objectContaining({
-              email: "juan@test.com",
-              name: "Juan Pérez",
-            }),
+          token: "fake-jwt-token-login",
+          user: expect.objectContaining({
+            id: 1,
+            email: "juan@test.com",
+            name: "Juan Pérez",
           }),
+          role: "user",
+          role_id: 2,
         }),
       );
       expect(mockUserFindByEmail).toHaveBeenCalledWith("juan@test.com");
@@ -332,6 +341,7 @@ describe("authController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "INVALID_CREDENTIALS",
           message: expect.stringContaining("Credenciales inválidas"),
         }),
       );
@@ -352,7 +362,10 @@ describe("authController", () => {
 
       expect(res.status).toHaveBeenCalledWith(401);
       expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ success: false }),
+        expect.objectContaining({
+          success: false,
+          code: "INVALID_CREDENTIALS",
+        }),
       );
       expect(mockBcryptCompare).not.toHaveBeenCalled();
     });
@@ -373,13 +386,14 @@ describe("authController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "UNAUTHORIZED",
           message: expect.stringContaining("Usuario inactivo"),
         }),
       );
       expect(mockBcryptCompare).not.toHaveBeenCalled();
     });
 
-    test("sin email o contraseña → next(error) 400", async () => {
+    test("sin email o contraseña → 400 validation", async () => {
       const req = createMockReq({
         email: "",
         password: "",
@@ -389,9 +403,15 @@ describe("authController", () => {
 
       await callHandler(login, req, res, next);
 
-      expect(next).toHaveBeenCalled();
-      expect(next.mock.calls[0][0].statusCode).toBe(400);
-      expect(next.mock.calls[0][0].message).toContain("Email y contraseña son requeridos");
+      expect(next).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          code: "VALIDATION_ERROR",
+          message: "Email y contraseña son requeridos",
+        }),
+      );
     });
   });
 
@@ -543,6 +563,7 @@ describe("authController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "UNAUTHORIZED",
           message: "La contraseña actual es incorrecta",
         }),
       );

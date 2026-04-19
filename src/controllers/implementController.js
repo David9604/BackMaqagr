@@ -4,7 +4,7 @@ import { applyPagination } from "../utils/pagination.util.js";
 
 export const getAllImplements = asyncHandler(async (req, res) => {
   const implementsList = await Implement.getAll();
-  const { limit = 10, offset = 0, sort = null, order = "asc", page = 1 } = req.pagination || {};
+  const { limit = 10, sort = null, order = "asc", page = 1 } = req.pagination || {};
 
   const sortedRows = [...implementsList];
 
@@ -22,7 +22,8 @@ export const getAllImplements = asyncHandler(async (req, res) => {
     });
   }
 
-  const rows = sortedRows.slice(offset, offset + limit);
+  const startIndex = (page - 1) * limit;
+  const rows = sortedRows.slice(startIndex, startIndex + limit);
   const { data, pagination } = applyPagination(rows, sortedRows.length, page, limit);
 
   return res.json({
@@ -41,6 +42,7 @@ export const getImplementById = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "ID de implemento inválido",
     });
   }
@@ -50,6 +52,7 @@ export const getImplementById = asyncHandler(async (req, res) => {
   if (!implementItem) {
     return res.status(404).json({
       success: false,
+      code: "NOT_FOUND",
       message: "Implemento no encontrado",
     });
   }
@@ -64,7 +67,8 @@ import Tractor from "../models/Tractor.js";
 
 export const searchImplements = asyncHandler(async (req, res) => {
   const { q, type, minWidth, maxWidth, requiredPower, tractorId } = req.query;
-  const { limit, offset, page, sort, order } = req.pagination;
+  const { limit, page, sort, order } = req.pagination;
+  const offset = (page - 1) * limit;
 
   const minWidthNum = minWidth ? parseFloat(minWidth) : null;
   const maxWidthNum = maxWidth ? parseFloat(maxWidth) : null;
@@ -74,6 +78,7 @@ export const searchImplements = asyncHandler(async (req, res) => {
   if (minWidth && (Number.isNaN(minWidthNum) || minWidthNum < 0)) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "minWidth debe ser un número positivo",
     });
   }
@@ -81,6 +86,7 @@ export const searchImplements = asyncHandler(async (req, res) => {
   if (maxWidth && (Number.isNaN(maxWidthNum) || maxWidthNum < 0)) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "maxWidth debe ser un número positivo",
     });
   }
@@ -92,6 +98,7 @@ export const searchImplements = asyncHandler(async (req, res) => {
   ) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "minWidth no puede ser mayor que maxWidth",
     });
   }
@@ -102,6 +109,7 @@ export const searchImplements = asyncHandler(async (req, res) => {
   ) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "requiredPower debe ser un número positivo",
     });
   }
@@ -112,6 +120,7 @@ export const searchImplements = asyncHandler(async (req, res) => {
     if (Number.isNaN(parsedTractorId) || parsedTractorId <= 0) {
       return res.status(400).json({
         success: false,
+        code: "VALIDATION_ERROR",
         message: "ID de tractor inválido",
       });
     }
@@ -120,6 +129,7 @@ export const searchImplements = asyncHandler(async (req, res) => {
     if (!tractor) {
       return res.status(404).json({
         success: false,
+        code: "NOT_FOUND",
         message: "Tractor referenciado no encontrado",
       });
     }
@@ -133,6 +143,7 @@ export const searchImplements = asyncHandler(async (req, res) => {
     minWidth: minWidthNum,
     maxWidth: maxWidthNum,
     requiredPower: requiredPowerNum,
+    page,
     limit,
     offset,
     sort,
@@ -164,7 +175,7 @@ export const searchImplements = asyncHandler(async (req, res) => {
 
 export const getAvailableImplements = asyncHandler(async (req, res) => {
   const implementsList = await Implement.getAvailable();
-  const { limit = 10, offset = 0, sort = null, order = "asc", page = 1 } = req.pagination || {};
+  const { limit = 10, sort = null, order = "asc", page = 1 } = req.pagination || {};
 
   const sortedRows = [...implementsList];
 
@@ -182,7 +193,8 @@ export const getAvailableImplements = asyncHandler(async (req, res) => {
     });
   }
 
-  const rows = sortedRows.slice(offset, offset + limit);
+  const startIndex = (page - 1) * limit;
+  const rows = sortedRows.slice(startIndex, startIndex + limit);
   const { data, pagination } = applyPagination(rows, sortedRows.length, page, limit);
 
   return res.json({
@@ -203,6 +215,7 @@ export const createImplement = asyncHandler(async (req, res) => {
   const {
     implement_name,
     brand,
+    image_url,
     power_requirement_hp,
     working_width_m,
     soil_type,
@@ -219,6 +232,7 @@ export const createImplement = asyncHandler(async (req, res) => {
   ) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "La potencia requerida debe estar entre 10 y 500 HP",
     });
   }
@@ -226,6 +240,7 @@ export const createImplement = asyncHandler(async (req, res) => {
   const payload = {
     implement_name,
     brand,
+    image_url,
     power_requirement_hp:
       power_requirement_hp !== undefined && power_requirement_hp !== null
         ? Number(power_requirement_hp)
@@ -262,6 +277,7 @@ export const updateImplement = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "ID de implemento inválido",
     });
   }
@@ -271,6 +287,7 @@ export const updateImplement = asyncHandler(async (req, res) => {
   if (!existing) {
     return res.status(404).json({
       success: false,
+      code: "NOT_FOUND",
       message: "Implemento no encontrado",
     });
   }
@@ -278,6 +295,7 @@ export const updateImplement = asyncHandler(async (req, res) => {
   const {
     implement_name,
     brand,
+    image_url,
     power_requirement_hp,
     working_width_m,
     soil_type,
@@ -294,6 +312,7 @@ export const updateImplement = asyncHandler(async (req, res) => {
   ) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "La potencia requerida debe estar entre 10 y 500 HP",
     });
   }
@@ -301,6 +320,7 @@ export const updateImplement = asyncHandler(async (req, res) => {
   const updateData = {
     implement_name,
     brand,
+    image_url,
     power_requirement_hp:
       power_requirement_hp !== undefined && power_requirement_hp !== null
         ? Number(power_requirement_hp)
@@ -337,6 +357,7 @@ export const deleteImplement = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "ID de implemento inválido",
     });
   }
@@ -346,6 +367,7 @@ export const deleteImplement = asyncHandler(async (req, res) => {
   if (!existing) {
     return res.status(404).json({
       success: false,
+      code: "NOT_FOUND",
       message: "Implemento no encontrado",
     });
   }

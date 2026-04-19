@@ -1,0 +1,15 @@
+node_modules/
+.env
+.git/
+coverage/
+logs/
+*.log
+.vscode/
+.idea/
+tests/
+jest.config.js
+jest.e2e.config.js
+jest.integration.config.js
+*.docx
+tasks-deployment-readiness.json
+migrate_notification.js

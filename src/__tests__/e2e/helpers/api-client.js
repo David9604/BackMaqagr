@@ -33,11 +33,13 @@ export const loginUser = async (app, email, password) => {
     .post('/api/auth/login')
     .send({ email, password });
 
-  if (response.status !== 200 || !response.body.data?.token) {
+  const token = response.body?.token || response.body?.data?.token;
+
+  if (response.status !== 200 || !token) {
     throw new Error(`Login failed: ${response.body.message || 'Unknown error'}`);
   }
 
-  return response.body.data.token;
+  return token;
 };
 
 /**
@@ -51,13 +53,16 @@ export const registerUser = async (app, userData) => {
     .post('/api/auth/register')
     .send(userData);
 
-  if (response.status !== 201 || !response.body.data?.token) {
+  const token = response.body?.token || response.body?.data?.token;
+  const user = response.body?.user || response.body?.data?.user;
+
+  if (response.status !== 201 || !token) {
     throw new Error(`Registration failed: ${response.body.message || 'Unknown error'}`);
   }
 
   return {
-    user: response.body.data.user,
-    token: response.body.data.token
+    user,
+    token
   };
 };
 

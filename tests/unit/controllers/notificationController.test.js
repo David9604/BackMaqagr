@@ -117,6 +117,7 @@ describe('notificationController', () => {
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({
       success: false,
+      code: 'NOT_FOUND',
       message: 'Notificación no encontrada o no pertenece al usuario',
     });
   });
@@ -170,6 +171,7 @@ describe('notificationController', () => {
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({
       success: false,
+      code: 'NOT_FOUND',
       message: 'Notificación no encontrada o no pertenece al usuario',
     });
   });

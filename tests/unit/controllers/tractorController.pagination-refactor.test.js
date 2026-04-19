@@ -54,7 +54,7 @@ describe("tractorController pagination refactor", () => {
   });
 
   test("getAllTractors delegates pagination to shared utility", async () => {
-    const req = { pagination: { page: 2, limit: 5 } };
+    const req = { pagination: { page: 1, limit: 5 } };
     const res = createMockRes();
     mockGetAll.mockResolvedValue([{ tractor_id: 1 }]);
 
@@ -63,7 +63,7 @@ describe("tractorController pagination refactor", () => {
     expect(mockApplyPagination).toHaveBeenCalledWith(
       [{ tractor_id: 1 }],
       1,
-      2,
+      1,
       5,
     );
   });

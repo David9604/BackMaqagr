@@ -1,0 +1,132 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - deploy
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
+      GAR_REPOSITORY: ${{ vars.GAR_REPOSITORY }}
+      GAR_LOCATION: ${{ vars.GAR_LOCATION }}
+      WIF_PROVIDER: ${{ vars.WIF_PROVIDER }}
+      WIF_SERVICE_ACCOUNT: ${{ vars.WIF_SERVICE_ACCOUNT }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required repository variables
+        shell: bash
+        run: |
+          set -euo pipefail
+          required_vars=(
+            GCP_PROJECT_ID
+            GCP_REGION
+            CLOUD_RUN_SERVICE
+            GAR_REPOSITORY
+            GAR_LOCATION
+            WIF_PROVIDER
+            WIF_SERVICE_ACCOUNT
+          )
+
+          missing=()
+          for var_name in "${required_vars[@]}"; do
+            value="${!var_name:-}"
+            if [[ -z "${value// }" ]]; then
+              missing+=("${var_name}")
+            fi
+          done
+
+          if (( ${#missing[@]} > 0 )); then
+            echo "::error::Missing required repository variables: ${missing[*]}"
+            echo "Set them in GitHub → Settings → Secrets and variables → Actions → Variables."
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud via OIDC WIF
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Configure Docker auth for Artifact Registry
+        shell: bash
+        run: |
+          gcloud auth configure-docker "${GAR_LOCATION}-docker.pkg.dev" --quiet
+
+      - name: Build image URIs
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_image_uri="${GAR_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GAR_REPOSITORY}/${CLOUD_RUN_SERVICE}"
+          image_uri_sha="${base_image_uri}:${GITHUB_SHA}"
+          image_uri_latest="${base_image_uri}:latest"
+
+          echo "base_image_uri=${base_image_uri}" >> "${GITHUB_OUTPUT}"
+          echo "image_uri_sha=${image_uri_sha}" >> "${GITHUB_OUTPUT}"
+          echo "image_uri_latest=${image_uri_latest}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build Docker image (SHA and latest tags)
+        shell: bash
+        run: |
+          docker build \
+            --file Dockerfile \
+            --tag "${{ steps.image.outputs.image_uri_sha }}" \
+            --tag "${{ steps.image.outputs.image_uri_latest }}" \
+            .
+
+      - name: Push Docker image tags to Artifact Registry
+        shell: bash
+        run: |
+          docker push "${{ steps.image.outputs.image_uri_sha }}"
+          docker push "${{ steps.image.outputs.image_uri_latest }}"
+
+      - name: Deploy to Cloud Run (SHA tag)
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud run deploy "${CLOUD_RUN_SERVICE}" \
+            --image "${{ steps.image.outputs.image_uri_sha }}" \
+            --region "${GCP_REGION}" \
+            --project "${GCP_PROJECT_ID}" \
+            --quiet
+
+          service_url="$(gcloud run services describe "${CLOUD_RUN_SERVICE}" --region "${GCP_REGION}" --project "${GCP_PROJECT_ID}" --format='value(status.url)')"
+          latest_revision="$(gcloud run services describe "${CLOUD_RUN_SERVICE}" --region "${GCP_REGION}" --project "${GCP_PROJECT_ID}" --format='value(status.latestReadyRevisionName)')"
+
+          echo "deployed_image=${{ steps.image.outputs.image_uri_sha }}" >> "${GITHUB_OUTPUT}"
+          echo "service_url=${service_url}" >> "${GITHUB_OUTPUT}"
+          echo "latest_revision=${latest_revision}" >> "${GITHUB_OUTPUT}"
+
+      - name: Deployment summary
+        shell: bash
+        run: |
+          echo "Deployed image: ${{ steps.deploy.outputs.deployed_image }}"
+          echo "Service URL: ${{ steps.deploy.outputs.service_url }}"
+          echo "Revision: ${{ steps.deploy.outputs.latest_revision }}"
+
+          cat <<'EOF' >> "${GITHUB_STEP_SUMMARY}"
+          ## Deployment Summary
+
+          - **Deployed image:** `${{ steps.deploy.outputs.deployed_image }}`
+          - **Service URL:** ${{ steps.deploy.outputs.service_url }}
+          - **Revision:** `${{ steps.deploy.outputs.latest_revision }}`
+          EOF

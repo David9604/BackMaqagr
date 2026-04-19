@@ -21,6 +21,7 @@ class Tractor {
       name,
       brand,
       model,
+      image_url = null,
       model_year = null,
       engine_power_hp,
       price = null,
@@ -42,18 +43,19 @@ class Tractor {
 
     const query = `
       INSERT INTO tractor (
-        name, brand, model, model_year, engine_power_hp, price, weight_kg,
+        name, brand, model, image_url, model_year, engine_power_hp, price, weight_kg,
         traction_force_kn, traction_type, tire_type, tire_width_mm,
         tire_diameter_mm, tire_pressure_psi, price_usd,
         fuel_consumption_lph, maintenance_cost_per_hour, status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
       RETURNING *
     `;
     const values = [
       name,
       brand,
       model,
+      image_url,
       model_year,
       engine_power_hp,
       normalizedPrice,
@@ -79,6 +81,7 @@ class Tractor {
       name,
       brand,
       model,
+      image_url,
       model_year,
       engine_power_hp,
       price,
@@ -103,27 +106,29 @@ class Tractor {
       SET name = COALESCE($1, name),
           brand = COALESCE($2, brand),
           model = COALESCE($3, model),
-          model_year = COALESCE($4, model_year),
-          engine_power_hp = COALESCE($5, engine_power_hp),
-          price = COALESCE($6, price),
-          weight_kg = COALESCE($7, weight_kg),
-          traction_force_kn = COALESCE($8, traction_force_kn),
-          traction_type = COALESCE($9, traction_type),
-          tire_type = COALESCE($10, tire_type),
-          tire_width_mm = COALESCE($11, tire_width_mm),
-          tire_diameter_mm = COALESCE($12, tire_diameter_mm),
-          tire_pressure_psi = COALESCE($13, tire_pressure_psi),
-          price_usd = COALESCE($14, price_usd),
-          fuel_consumption_lph = COALESCE($15, fuel_consumption_lph),
-          maintenance_cost_per_hour = COALESCE($16, maintenance_cost_per_hour),
-          status = COALESCE($17, status)
-      WHERE tractor_id = $18
+          image_url = COALESCE($4, image_url),
+          model_year = COALESCE($5, model_year),
+          engine_power_hp = COALESCE($6, engine_power_hp),
+          price = COALESCE($7, price),
+          weight_kg = COALESCE($8, weight_kg),
+          traction_force_kn = COALESCE($9, traction_force_kn),
+          traction_type = COALESCE($10, traction_type),
+          tire_type = COALESCE($11, tire_type),
+          tire_width_mm = COALESCE($12, tire_width_mm),
+          tire_diameter_mm = COALESCE($13, tire_diameter_mm),
+          tire_pressure_psi = COALESCE($14, tire_pressure_psi),
+          price_usd = COALESCE($15, price_usd),
+          fuel_consumption_lph = COALESCE($16, fuel_consumption_lph),
+          maintenance_cost_per_hour = COALESCE($17, maintenance_cost_per_hour),
+          status = COALESCE($18, status)
+      WHERE tractor_id = $19
       RETURNING *
     `;
     const values = [
       name,
       brand,
       model,
+      image_url,
       model_year,
       engine_power_hp,
       normalizedPrice,
