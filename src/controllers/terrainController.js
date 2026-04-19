@@ -13,7 +13,7 @@ import { applyPagination } from "../utils/pagination.util.js";
 export const getAllTerrains = asyncHandler(async (req, res) => {
   const userId = req.user.user_id;
   const terrains = await Terrain.findByUserId(userId);
-  const { limit = 10, offset = 0, sort = null, order = "asc", page = 1 } = req.pagination || {};
+  const { limit = 10, sort = null, order = "asc", page = 1 } = req.pagination || {};
 
   const sortedRows = [...terrains];
 
@@ -31,7 +31,8 @@ export const getAllTerrains = asyncHandler(async (req, res) => {
     });
   }
 
-  const rows = sortedRows.slice(offset, offset + limit);
+  const startIndex = (page - 1) * limit;
+  const rows = sortedRows.slice(startIndex, startIndex + limit);
   const { data, pagination } = applyPagination(rows, sortedRows.length, page, limit);
 
   return res.json({
@@ -55,6 +56,7 @@ export const getTerrainById = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "ID de terreno inválido",
     });
   }
@@ -65,6 +67,7 @@ export const getTerrainById = asyncHandler(async (req, res) => {
   if (!terrain) {
     return res.status(404).json({
       success: false,
+      code: "NOT_FOUND",
       message: "Terreno no encontrado",
     });
   }
@@ -111,6 +114,8 @@ export const createTerrain = asyncHandler(async (req, res) => {
   if (errors.length > 0) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
+      message: "Error de validación",
       errors,
     });
   }
@@ -149,6 +154,7 @@ export const updateTerrain = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "ID de terreno inválido",
     });
   }
@@ -159,6 +165,7 @@ export const updateTerrain = asyncHandler(async (req, res) => {
   if (!existing) {
     return res.status(404).json({
       success: false,
+      code: "NOT_FOUND",
       message: "Terreno no encontrado",
     });
   }
@@ -180,6 +187,7 @@ export const updateTerrain = asyncHandler(async (req, res) => {
   ) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "area_hectares debe estar entre 0.1 y 10,000 hectáreas",
     });
   }
@@ -226,6 +234,7 @@ export const deleteTerrain = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "ID de terreno inválido",
     });
   }
@@ -236,6 +245,7 @@ export const deleteTerrain = asyncHandler(async (req, res) => {
   if (!existing) {
     return res.status(404).json({
       success: false,
+      code: "NOT_FOUND",
       message: "Terreno no encontrado",
     });
   }

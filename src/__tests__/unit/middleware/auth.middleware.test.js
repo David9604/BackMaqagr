@@ -73,6 +73,7 @@ describe('auth.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'UNAUTHORIZED',
         message: 'Token no proporcionado'
       });
       expect(mockNext).not.toHaveBeenCalled();
@@ -89,6 +90,7 @@ describe('auth.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'UNAUTHORIZED',
         message: 'Formato de token inválido'
       });
       expect(mockNext).not.toHaveBeenCalled();
@@ -105,6 +107,7 @@ describe('auth.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'UNAUTHORIZED',
         message: 'Formato de token inválido'
       });
       expect(mockNext).not.toHaveBeenCalled();
@@ -126,6 +129,7 @@ describe('auth.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'UNAUTHORIZED',
         message: 'Token inválido o expirado'
       });
       expect(mockNext).not.toHaveBeenCalled();
@@ -149,6 +153,7 @@ describe('auth.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'UNAUTHORIZED',
         message: 'Token inválido o expirado'
       });
       expect(mockNext).not.toHaveBeenCalled();
@@ -187,6 +192,7 @@ describe('auth.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(403);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'FORBIDDEN',
         message: 'Acceso denegado: se requiere rol de administrador'
       });
       expect(mockNext).not.toHaveBeenCalled();
@@ -202,6 +208,7 @@ describe('auth.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'UNAUTHORIZED',
         message: 'No autenticado'
       });
       expect(mockNext).not.toHaveBeenCalled();
@@ -222,6 +229,7 @@ describe('auth.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(403);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'FORBIDDEN',
         message: 'Acceso denegado: se requiere rol de administrador'
       });
       expect(mockNext).not.toHaveBeenCalled();
@@ -262,6 +270,7 @@ describe('auth.middleware.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'UNAUTHORIZED',
         message: 'Token no proporcionado'
       });
       expect(mockNext).not.toHaveBeenCalled();

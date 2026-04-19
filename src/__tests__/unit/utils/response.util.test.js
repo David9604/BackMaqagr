@@ -98,6 +98,7 @@ describe('response.util.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(500);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'INTERNAL_ERROR',
         message: 'Error interno'
       });
     });
@@ -107,6 +108,7 @@ describe('response.util.js', () => {
 
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'INTERNAL_ERROR',
         message: 'Error en el servidor'
       });
     });
@@ -117,6 +119,7 @@ describe('response.util.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'VALIDATION_ERROR',
         message: 'Bad request'
       });
     });
@@ -128,6 +131,7 @@ describe('response.util.js', () => {
 
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'VALIDATION_ERROR',
         message: 'Validation failed',
         errors: { field1: 'Invalid', field2: 'Required' }
       });
@@ -140,6 +144,7 @@ describe('response.util.js', () => {
       expect(callArg).not.toHaveProperty('errors');
       expect(callArg).toEqual({
         success: false,
+        code: 'INTERNAL_ERROR',
         message: 'Error'
       });
     });
@@ -189,6 +194,7 @@ describe('response.util.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'VALIDATION_ERROR',
         message: 'Datos inválidos',
         errors: ['Campo requerido', 'Formato inválido']
       });
@@ -201,6 +207,7 @@ describe('response.util.js', () => {
 
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'VALIDATION_ERROR',
         message: 'Error de validación',
         errors: { email: 'Invalid email' }
       });
@@ -214,6 +221,7 @@ describe('response.util.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'UNAUTHORIZED',
         message: 'Token inválido'
       });
     });
@@ -223,6 +231,7 @@ describe('response.util.js', () => {
 
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'UNAUTHORIZED',
         message: 'No autorizado'
       });
     });
@@ -235,6 +244,7 @@ describe('response.util.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(403);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'FORBIDDEN',
         message: 'Permiso denegado'
       });
     });
@@ -244,6 +254,7 @@ describe('response.util.js', () => {
 
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'FORBIDDEN',
         message: 'Acceso denegado'
       });
     });
@@ -256,6 +267,7 @@ describe('response.util.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(404);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'NOT_FOUND',
         message: 'Usuario no encontrado'
       });
     });
@@ -265,6 +277,7 @@ describe('response.util.js', () => {
 
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'NOT_FOUND',
         message: 'Recurso no encontrado'
       });
     });
@@ -277,6 +290,7 @@ describe('response.util.js', () => {
       expect(mockRes.status).toHaveBeenCalledWith(409);
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'CONFLICT',
         message: 'Email ya existe'
       });
     });
@@ -286,6 +300,7 @@ describe('response.util.js', () => {
 
       expect(mockRes.json).toHaveBeenCalledWith({
         success: false,
+        code: 'CONFLICT',
         message: 'Conflicto con el estado actual del recurso'
       });
     });

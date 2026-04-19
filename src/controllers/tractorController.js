@@ -8,7 +8,6 @@ export const getAllTractors = asyncHandler(async (req, res) => {
   const tractors = await Tractor.getAll();
   const {
     limit = 10,
-    offset = 0,
     sort = null,
     order = 'asc',
     page = 1,
@@ -30,7 +29,8 @@ export const getAllTractors = asyncHandler(async (req, res) => {
     });
   }
 
-  const rows = sortedRows.slice(offset, offset + limit);
+  const startIndex = (page - 1) * limit;
+  const rows = sortedRows.slice(startIndex, startIndex + limit);
   const { data, pagination } = applyPagination(rows, sortedRows.length, page, limit);
 
   return res.json({
@@ -49,6 +49,7 @@ export const getTractorById = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "ID de tractor inválido",
     });
   }
@@ -58,6 +59,7 @@ export const getTractorById = asyncHandler(async (req, res) => {
   if (!tractor) {
     return res.status(404).json({
       success: false,
+      code: "NOT_FOUND",
       message: "Tractor no encontrado",
     });
   }
@@ -70,7 +72,8 @@ export const getTractorById = asyncHandler(async (req, res) => {
 
 export const searchTractors = asyncHandler(async (req, res) => {
   const { q, brand, minPower, maxPower, type } = req.query;
-  const { limit, offset, page, sort, order } = req.pagination;
+  const { limit, page, sort, order } = req.pagination;
+  const offset = (page - 1) * limit;
 
   const minPowerNum = minPower ? parseFloat(minPower) : null;
   const maxPowerNum = maxPower ? parseFloat(maxPower) : null;
@@ -79,6 +82,7 @@ export const searchTractors = asyncHandler(async (req, res) => {
   if (minPower && (Number.isNaN(minPowerNum) || minPowerNum < 0)) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "minPower debe ser un número positivo",
     });
   }
@@ -86,6 +90,7 @@ export const searchTractors = asyncHandler(async (req, res) => {
   if (maxPower && (Number.isNaN(maxPowerNum) || maxPowerNum < 0)) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "maxPower debe ser un número positivo",
     });
   }
@@ -97,6 +102,7 @@ export const searchTractors = asyncHandler(async (req, res) => {
   ) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "minPower no puede ser mayor que maxPower",
     });
   }
@@ -139,7 +145,6 @@ export const getAvailableTractors = asyncHandler(async (req, res) => {
   const tractors = await Tractor.getAvailable();
   const {
     limit = 10,
-    offset = 0,
     sort = null,
     order = 'asc',
     page = 1,
@@ -161,7 +166,8 @@ export const getAvailableTractors = asyncHandler(async (req, res) => {
     });
   }
 
-  const rows = sortedRows.slice(offset, offset + limit);
+  const startIndex = (page - 1) * limit;
+  const rows = sortedRows.slice(startIndex, startIndex + limit);
   const { data, pagination } = applyPagination(rows, sortedRows.length, page, limit);
 
   return res.json({
@@ -200,6 +206,7 @@ export const createTractor = asyncHandler(async (req, res) => {
   ) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "La potencia del motor debe estar entre 10 y 500 HP",
     });
   }
@@ -264,6 +271,7 @@ export const updateTractor = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "ID de tractor inválido",
     });
   }
@@ -273,6 +281,7 @@ export const updateTractor = asyncHandler(async (req, res) => {
   if (!existing) {
     return res.status(404).json({
       success: false,
+      code: "NOT_FOUND",
       message: "Tractor no encontrado",
     });
   }
@@ -302,6 +311,7 @@ export const updateTractor = asyncHandler(async (req, res) => {
   ) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "La potencia del motor debe estar entre 10 y 500 HP",
     });
   }
@@ -366,6 +376,7 @@ export const deleteTractor = asyncHandler(async (req, res) => {
   if (Number.isNaN(id) || id <= 0) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message: "ID de tractor inválido",
     });
   }
@@ -375,6 +386,7 @@ export const deleteTractor = asyncHandler(async (req, res) => {
   if (!existing) {
     return res.status(404).json({
       success: false,
+      code: "NOT_FOUND",
       message: "Tractor no encontrado",
     });
   }
@@ -384,6 +396,7 @@ export const deleteTractor = asyncHandler(async (req, res) => {
   if (recommendations && recommendations.length > 0) {
     return res.status(400).json({
       success: false,
+      code: "VALIDATION_ERROR",
       message:
         "No se puede eliminar el tractor porque tiene recomendaciones asociadas",
     });

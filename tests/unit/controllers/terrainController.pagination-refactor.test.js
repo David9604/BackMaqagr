@@ -44,7 +44,7 @@ describe("terrainController pagination refactor", () => {
   });
 
   test("getAllTerrains delegates pagination to shared utility", async () => {
-    const req = { user: { user_id: 44 }, pagination: { page: 2, limit: 30 } };
+    const req = { user: { user_id: 44 }, pagination: { page: 1, limit: 30 } };
     const res = createMockRes();
     mockFindByUserId.mockResolvedValue([{ terrain_id: 7 }]);
 
@@ -53,7 +53,7 @@ describe("terrainController pagination refactor", () => {
     expect(mockApplyPagination).toHaveBeenCalledWith(
       [{ terrain_id: 7 }],
       1,
-      2,
+      1,
       30,
     );
   });

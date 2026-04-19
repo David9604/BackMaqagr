@@ -45,19 +45,19 @@ describe('Flujo de Autenticación - Integración', () => {
         .send(TEST_USER);
 
       expect(res.status).toBe(201);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data).toHaveProperty('token');
-      expect(res.body.data).toHaveProperty('user');
-      expect(res.body.data.user.email).toBe(TEST_USER.email.toLowerCase());
-      expect(res.body.data.user.name).toBe(TEST_USER.name);
-      expect(res.body.data.user.role_id).toBe(2); // Usuario común
-      expect(res.body.data.user.status).toBe('active');
-      expect(res.body.data.user).toHaveProperty('user_id');
-      expect(res.body.data.user).toHaveProperty('registration_date');
+      expect(res.body).toHaveProperty('token');
+      expect(res.body).toHaveProperty('user');
+      expect(res.body).toHaveProperty('role');
+      expect(res.body).toHaveProperty('role_id');
+      expect(res.body.user.email).toBe(TEST_USER.email.toLowerCase());
+      expect(res.body.user.name).toBe(TEST_USER.name);
+      expect(res.body.user).toHaveProperty('id');
+      expect(res.body.role).toBe('user');
+      expect(res.body.role_id).toBe(2); // Usuario común
 
       // Guardar para tests posteriores
-      registeredToken = res.body.data.token;
-      registeredUser = res.body.data.user;
+      registeredToken = res.body.token;
+      registeredUser = res.body.user;
     });
 
     it('debería rechazar registro con email duplicado → 409', async () => {
@@ -67,6 +67,7 @@ describe('Flujo de Autenticación - Integración', () => {
 
       expect(res.status).toBe(409);
       expect(res.body.success).toBe(false);
+      expect(res.body.code).toBe('USER_ALREADY_EXISTS');
       expect(res.body.message).toMatch(/email.*registrado/i);
     });
 
@@ -77,6 +78,7 @@ describe('Flujo de Autenticación - Integración', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
     });
 
     it('debería rechazar registro con email inválido → 400', async () => {
@@ -90,6 +92,7 @@ describe('Flujo de Autenticación - Integración', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
     });
 
     it('debería rechazar registro con contraseña débil → 400', async () => {
@@ -103,6 +106,7 @@ describe('Flujo de Autenticación - Integración', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
     });
   });
 
@@ -120,15 +124,19 @@ describe('Flujo de Autenticación - Integración', () => {
         });
 
       expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data).toHaveProperty('token');
-      expect(res.body.data.token).toBeTruthy();
-      expect(res.body.data).toHaveProperty('user');
-      expect(res.body.data.user.email).toBe(TEST_USER.email.toLowerCase());
-      expect(res.body.data.user.name).toBe(TEST_USER.name);
+      expect(res.body).toHaveProperty('token');
+      expect(res.body.token).toBeTruthy();
+      expect(res.body).toHaveProperty('user');
+      expect(res.body.user).toHaveProperty('id');
+      expect(res.body).toHaveProperty('role');
+      expect(res.body).toHaveProperty('role_id');
+      expect(res.body.user.email).toBe(TEST_USER.email.toLowerCase());
+      expect(res.body.user.name).toBe(TEST_USER.name);
+      expect(res.body.role).toBe('user');
+      expect(res.body.role_id).toBe(2);
 
       // Actualizar token para tests posteriores
-      registeredToken = res.body.data.token;
+      registeredToken = res.body.token;
     });
 
     it('debería rechazar login con contraseña incorrecta → 401', async () => {
@@ -141,6 +149,7 @@ describe('Flujo de Autenticación - Integración', () => {
 
       expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
+      expect(res.body.code).toBe('INVALID_CREDENTIALS');
       expect(res.body.message).toMatch(/credenciales.*inválidas/i);
     });
 
@@ -154,6 +163,7 @@ describe('Flujo de Autenticación - Integración', () => {
 
       expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
+      expect(res.body.code).toBe('INVALID_CREDENTIALS');
     });
 
     it('debería rechazar login sin campos obligatorios → 400', async () => {
@@ -163,6 +173,7 @@ describe('Flujo de Autenticación - Integración', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
+      expect(res.body.code).toBe('VALIDATION_ERROR');
     });
   });
 
@@ -194,6 +205,7 @@ describe('Flujo de Autenticación - Integración', () => {
 
       expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
+      expect(res.body.code).toBe('UNAUTHORIZED');
       expect(res.body.message).toMatch(/token/i);
     });
 
@@ -204,6 +216,7 @@ describe('Flujo de Autenticación - Integración', () => {
 
       expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
+      expect(res.body.code).toBe('UNAUTHORIZED');
     });
 
     it('debería rechazar acceso con formato de Authorization incorrecto → 401', async () => {
@@ -213,6 +226,7 @@ describe('Flujo de Autenticación - Integración', () => {
 
       expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
+      expect(res.body.code).toBe('UNAUTHORIZED');
     });
   });
 
@@ -250,7 +264,7 @@ describe('Flujo de Autenticación - Integración', () => {
         .send(newUser);
 
       expect(registerRes.status).toBe(201);
-      const registerToken = registerRes.body.data.token;
+      const registerToken = registerRes.body.token;
 
       // 2. Login con las credenciales
       const loginRes = await request
@@ -261,7 +275,7 @@ describe('Flujo de Autenticación - Integración', () => {
         });
 
       expect(loginRes.status).toBe(200);
-      const loginToken = loginRes.body.data.token;
+      const loginToken = loginRes.body.token;
 
       // 3. Acceder al perfil con token de login
       const profileRes = await request
@@ -270,6 +284,7 @@ describe('Flujo de Autenticación - Integración', () => {
 
       expect(profileRes.status).toBe(200);
       expect(profileRes.body.data.user.email).toBe(newUser.email.toLowerCase());
+      expect(profileRes.body.success).toBe(true);
 
       // 4. Cerrar sesión
       const logoutRes = await request
@@ -277,6 +292,7 @@ describe('Flujo de Autenticación - Integración', () => {
         .set('Authorization', `Bearer ${loginToken}`);
 
       expect(logoutRes.status).toBe(200);
+      expect(logoutRes.body.success).toBe(true);
     });
   });
 });

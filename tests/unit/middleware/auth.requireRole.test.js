@@ -32,6 +32,7 @@ describe('auth.middleware requireRole', () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
       success: false,
+      code: 'INTERNAL_ERROR',
       message: 'Configuración de roles inválida',
     });
     expect(next).not.toHaveBeenCalled();
@@ -64,6 +65,7 @@ describe('auth.middleware requireRole', () => {
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({
       success: false,
+      code: 'FORBIDDEN',
       message: 'Acceso denegado: se requiere rol de administrador o operator',
     });
     expect(next).not.toHaveBeenCalled();

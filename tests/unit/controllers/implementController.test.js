@@ -102,8 +102,8 @@ describe("implementController", () => {
   // ========================================================
   describe("getAllImplements()", () => {
     test("retorna 200 y lista de implementos con paginación", async () => {
-      const req = createMockReq({}, {}, { limit: "10", offset: "0" });
-      req.pagination = { limit: 10, offset: 0, page: 1, sort: null, order: null };
+      const req = createMockReq({}, {}, { limit: "10", page: "1" });
+      req.pagination = { limit: 10, page: 1, sort: null, order: null };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -124,7 +124,7 @@ describe("implementController", () => {
 
     test("ordena por campo string con order desc", async () => {
       const req = createMockReq();
-      req.pagination = { limit: 10, offset: 0, page: 1, sort: "name", order: "desc" };
+      req.pagination = { limit: 10, page: 1, sort: "name", order: "desc" };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -142,7 +142,7 @@ describe("implementController", () => {
 
     test("ordena por campo numerico con order asc", async () => {
       const req = createMockReq();
-      req.pagination = { limit: 10, offset: 0, page: 1, sort: "width", order: "asc" };
+      req.pagination = { limit: 10, page: 1, sort: "width", order: "asc" };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -162,7 +162,7 @@ describe("implementController", () => {
   describe("getAvailableImplements()", () => {
     test("retorna implementos disponibles paginados", async () => {
       const req = createMockReq();
-      req.pagination = { limit: 10, offset: 0, page: 1, sort: null, order: "asc" };
+      req.pagination = { limit: 10, page: 1, sort: null, order: "asc" };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -213,6 +213,7 @@ describe("implementController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "ID de implemento inválido",
         }),
       );
@@ -231,6 +232,7 @@ describe("implementController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "NOT_FOUND",
           message: "Implemento no encontrado",
         }),
       );
@@ -283,6 +285,7 @@ describe("implementController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "La potencia requerida debe estar entre 10 y 500 HP",
         }),
       );
@@ -385,6 +388,7 @@ describe("implementController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "La potencia requerida debe estar entre 10 y 500 HP",
         }),
       );
@@ -432,9 +436,9 @@ describe("implementController", () => {
       const req = createMockReq(
         {},
         {},
-        { q: "arado", limit: "10", offset: "0" },
+        { q: "arado", limit: "10", page: "1" },
       );
-      req.pagination = { limit: 10, offset: 0, page: 1 };
+      req.pagination = { limit: 10, page: 1 };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -443,7 +447,7 @@ describe("implementController", () => {
       await callHandler(searchImplements, req, res, next);
 
       expect(mockAdvancedSearch).toHaveBeenCalledWith(
-        ObjectContaining({ q: "arado", limit: 10, offset: 0 }),
+        ObjectContaining({ q: "arado", limit: 10, offset: 0, page: 1 }),
         null,
       );
       expect(res.json).toHaveBeenCalledWith(
@@ -465,7 +469,7 @@ describe("implementController", () => {
         {},
         { type: "plow", minWidth: "2", maxWidth: "5", requiredPower: "100" },
       );
-      req.pagination = { limit: 10, offset: 0, page: 1 };
+      req.pagination = { limit: 10, page: 1 };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -487,7 +491,7 @@ describe("implementController", () => {
     test("búsqueda con tractorId y compatibilidad", async () => {
       const ObjectContaining = expect.objectContaining;
       const req = createMockReq({}, {}, { tractorId: "1" });
-      req.pagination = { limit: 10, offset: 0, page: 1 };
+      req.pagination = { limit: 10, page: 1 };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -507,6 +511,7 @@ describe("implementController", () => {
           requiredPower: null,
           limit: 10,
           offset: 0,
+          page: 1,
         }),
         120,
       );
@@ -515,7 +520,7 @@ describe("implementController", () => {
     test("retorna 400 si tractorId no es numérico", async () => {
       const ObjectContaining = expect.objectContaining;
       const req = createMockReq({}, {}, { tractorId: "abc" });
-      req.pagination = { limit: 10, offset: 0, page: 1 };
+      req.pagination = { limit: 10, page: 1 };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -523,14 +528,14 @@ describe("implementController", () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
-        ObjectContaining({ success: false }),
+        ObjectContaining({ success: false, code: "VALIDATION_ERROR" }),
       );
     });
 
     test("retorna 404 si tractorId no existe", async () => {
       const ObjectContaining = expect.objectContaining;
       const req = createMockReq({}, {}, { tractorId: "999" });
-      req.pagination = { limit: 10, offset: 0, page: 1 };
+      req.pagination = { limit: 10, page: 1 };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -542,6 +547,7 @@ describe("implementController", () => {
       expect(res.json).toHaveBeenCalledWith(
         ObjectContaining({
           success: false,
+          code: "NOT_FOUND",
           message: "Tractor referenciado no encontrado",
         }),
       );
@@ -550,7 +556,7 @@ describe("implementController", () => {
     test("retorna 400 si minWidth > maxWidth", async () => {
       const ObjectContaining = expect.objectContaining;
       const req = createMockReq({}, {}, { minWidth: "10", maxWidth: "5" });
-      req.pagination = { limit: 10, offset: 0, page: 1 };
+      req.pagination = { limit: 10, page: 1 };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -558,14 +564,14 @@ describe("implementController", () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
-        ObjectContaining({ success: false }),
+        ObjectContaining({ success: false, code: "VALIDATION_ERROR" }),
       );
     });
 
     test("retorna 400 si minWidth es inválido", async () => {
       const ObjectContaining = expect.objectContaining;
       const req = createMockReq({}, {}, { minWidth: "abc" });
-      req.pagination = { limit: 10, offset: 0, page: 1 };
+      req.pagination = { limit: 10, page: 1 };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -573,13 +579,13 @@ describe("implementController", () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
-        ObjectContaining({ success: false }),
+        ObjectContaining({ success: false, code: "VALIDATION_ERROR" }),
       );
     });
 
     test("retorna 400 si requiredPower es inválido", async () => {
       const req = createMockReq({}, {}, { requiredPower: "abc" });
-      req.pagination = { limit: 10, offset: 0, page: 1 };
+      req.pagination = { limit: 10, page: 1 };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -589,6 +595,7 @@ describe("implementController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "requiredPower debe ser un número positivo",
         }),
       );
@@ -640,6 +647,7 @@ describe("implementController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "ID de implemento inválido",
         }),
       );

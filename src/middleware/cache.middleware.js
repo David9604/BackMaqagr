@@ -9,6 +9,12 @@ export const cacheMiddleware = (ttlSeconds) => {
             return next();
         }
 
+        // Fail-fast: if Redis is not ready, continue without cache
+        // (status may be undefined on mocks, in which case we keep normal behavior)
+        if (redisClient?.status && redisClient.status !== 'ready') {
+            return next();
+        }
+
         const authUserId = req.user?.id ?? req.user?.userId ?? req.user?.user_id;
         const userId = authUserId ? `:${authUserId}` : '';
         const key = `cache:${req.originalUrl || req.url}${userId}`;

@@ -118,7 +118,8 @@ describe("tractorController", () => {
   // ========================================================
   describe("getAllTractors()", () => {
     test("retorna 200 y lista de tractores con paginación", async () => {
-      const req = createMockReq({}, {}, { limit: "10", offset: "0" });
+      const req = createMockReq({}, {}, { limit: "10", page: "1" });
+      req.pagination = { page: 1, limit: 10, sort: null, order: null };
       const res = createMockRes();
       const next = createMockNext();
 
@@ -142,7 +143,6 @@ describe("tractorController", () => {
       req.pagination = {
         page: 1,
         limit: 10,
-        offset: 0,
         sort: "name",
         order: "desc",
       };
@@ -166,7 +166,6 @@ describe("tractorController", () => {
       req.pagination = {
         page: 1,
         limit: 10,
-        offset: 0,
         sort: "name",
         order: "asc",
       };
@@ -193,7 +192,6 @@ describe("tractorController", () => {
         pagination: {
           page: 1,
           limit: 5,
-          offset: 0,
         },
       };
       const res = createMockRes();
@@ -246,6 +244,7 @@ describe("tractorController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "ID de tractor inválido",
         }),
       );
@@ -264,6 +263,7 @@ describe("tractorController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "NOT_FOUND",
           message: "Tractor no encontrado",
         }),
       );
@@ -316,6 +316,7 @@ describe("tractorController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "La potencia del motor debe estar entre 10 y 500 HP",
         }),
       );
@@ -449,6 +450,7 @@ describe("tractorController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "La potencia del motor debe estar entre 10 y 500 HP",
         }),
       );
@@ -569,6 +571,7 @@ describe("tractorController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message:
             "No se puede eliminar el tractor porque tiene recomendaciones asociadas",
         }),
@@ -587,6 +590,7 @@ describe("tractorController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "ID de tractor inválido",
         }),
       );
@@ -622,7 +626,6 @@ describe("tractorController", () => {
       pagination: {
         page: 1,
         limit: 10,
-        offset: 0,
         sort: "engine_power_hp",
         order: "asc",
       },
@@ -736,6 +739,7 @@ describe("tractorController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "minPower debe ser un número positivo",
         }),
       );
@@ -752,6 +756,7 @@ describe("tractorController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "maxPower debe ser un número positivo",
         }),
       );
@@ -768,6 +773,7 @@ describe("tractorController", () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
+          code: "VALIDATION_ERROR",
           message: "minPower no puede ser mayor que maxPower",
         }),
       );

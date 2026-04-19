@@ -17,6 +17,19 @@ import {
   NotFoundError,
 } from '../utils/errors.util.js';
 
+const mapStatusToErrorCode = (statusCode) => {
+  const map = {
+    400: 'VALIDATION_ERROR',
+    401: 'UNAUTHORIZED',
+    403: 'FORBIDDEN',
+    404: 'NOT_FOUND',
+    409: 'CONFLICT',
+    500: 'INTERNAL_ERROR',
+  };
+
+  return map[statusCode] || 'INTERNAL_ERROR';
+};
+
 /**
  * Handler para rutas no encontradas (404)
  */
@@ -32,6 +45,7 @@ export const notFound = (req, res, next) => {
 
   res.status(404).json({
     success: false,
+    code: 'NOT_FOUND',
     message: `La ruta ${req.originalUrl} no existe en este servidor`,
   });
 };
@@ -71,6 +85,15 @@ export const errorHandler = (err, req, res, next) => {
   // JWT
   if (err.name === 'JsonWebTokenError')  { statusCode = 401; message = 'Token inválido'; }
   if (err.name === 'TokenExpiredError')  { statusCode = 401; message = 'Token expirado'; }
+
+  // CORS
+  if (
+    typeof err.message === 'string' &&
+    err.message.toLowerCase().includes('cors')
+  ) {
+    statusCode = 403;
+    message = 'No permitido por la política CORS';
+  }
 
   // Validación (Mongoose / JOI / third-party — sin statusCode propio)
   if (err.name === 'ValidationError' && !err.statusCode) { statusCode = 400; message = 'Error de validación'; }
@@ -119,7 +142,11 @@ export const errorHandler = (err, req, res, next) => {
   }
 
   // ── Respuesta HTTP ─────────────────────────────────────────────────────────
-  const response = { success: false, message };
+  const response = {
+    success: false,
+    code: mapStatusToErrorCode(statusCode),
+    message,
+  };
 
   // Incluir detalles solo en development
   if (process.env.NODE_ENV === 'development') {

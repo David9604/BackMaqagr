@@ -3,6 +3,15 @@
  * Proporciona funciones para generar respuestas consistentes en toda la API
  */
 
+const DEFAULT_ERROR_CODE_BY_STATUS = {
+  400: 'VALIDATION_ERROR',
+  401: 'UNAUTHORIZED',
+  403: 'FORBIDDEN',
+  404: 'NOT_FOUND',
+  409: 'CONFLICT',
+  500: 'INTERNAL_ERROR'
+};
+
 /**
  * Envía una respuesta exitosa con formato consistente
  * @param {Object} res - Express response object
@@ -25,11 +34,21 @@ export const successResponse = (res, data, message = 'Operación exitosa', statu
  * @param {string} message - Mensaje descriptivo del error
  * @param {number} statusCode - Código de estado HTTP (por defecto 500)
  * @param {Object} errors - Detalles adicionales del error (opcional)
+ * @param {string} code - Código de error estable para integración (opcional)
  * @returns {Object} Response JSON
  */
-export const errorResponse = (res, message = 'Error en el servidor', statusCode = 500, errors = null) => {
+export const errorResponse = (
+  res,
+  message = 'Error en el servidor',
+  statusCode = 500,
+  errors = null,
+  code = null,
+) => {
+  const resolvedCode = code || DEFAULT_ERROR_CODE_BY_STATUS[statusCode] || 'INTERNAL_ERROR';
+
   const response = {
     success: false,
+    code: resolvedCode,
     message
   };
 
@@ -66,50 +85,55 @@ export const noContentResponse = (res) => {
  * @param {Object} res - Express response object
  * @param {string|Array} errors - Errores de validación
  * @param {string} message - Mensaje principal
+ * @param {string} code - Código de error estable
  * @returns {Object} Response JSON
  */
-export const validationErrorResponse = (res, errors, message = 'Error de validación') => {
-  return errorResponse(res, message, 400, errors);
+export const validationErrorResponse = (res, errors, message = 'Error de validación', code = 'VALIDATION_ERROR') => {
+  return errorResponse(res, message, 400, errors, code);
 };
 
 /**
  * Envía una respuesta de error de autenticación (401)
  * @param {Object} res - Express response object
  * @param {string} message - Mensaje de error
+ * @param {string} code - Código de error estable
  * @returns {Object} Response JSON
  */
-export const unauthorizedResponse = (res, message = 'No autorizado') => {
-  return errorResponse(res, message, 401);
+export const unauthorizedResponse = (res, message = 'No autorizado', code = 'UNAUTHORIZED') => {
+  return errorResponse(res, message, 401, null, code);
 };
 
 /**
  * Envía una respuesta de error de permisos (403)
  * @param {Object} res - Express response object
  * @param {string} message - Mensaje de error
+ * @param {string} code - Código de error estable
  * @returns {Object} Response JSON
  */
-export const forbiddenResponse = (res, message = 'Acceso denegado') => {
-  return errorResponse(res, message, 403);
+export const forbiddenResponse = (res, message = 'Acceso denegado', code = 'FORBIDDEN') => {
+  return errorResponse(res, message, 403, null, code);
 };
 
 /**
  * Envía una respuesta de recurso no encontrado (404)
  * @param {Object} res - Express response object
  * @param {string} message - Mensaje de error
+ * @param {string} code - Código de error estable
  * @returns {Object} Response JSON
  */
-export const notFoundResponse = (res, message = 'Recurso no encontrado') => {
-  return errorResponse(res, message, 404);
+export const notFoundResponse = (res, message = 'Recurso no encontrado', code = 'NOT_FOUND') => {
+  return errorResponse(res, message, 404, null, code);
 };
 
 /**
  * Envía una respuesta de conflicto (409)
  * @param {Object} res - Express response object
  * @param {string} message - Mensaje de error
+ * @param {string} code - Código de error estable
  * @returns {Object} Response JSON
  */
-export const conflictResponse = (res, message = 'Conflicto con el estado actual del recurso') => {
-  return errorResponse(res, message, 409);
+export const conflictResponse = (res, message = 'Conflicto con el estado actual del recurso', code = 'CONFLICT') => {
+  return errorResponse(res, message, 409, null, code);
 };
 
 /**

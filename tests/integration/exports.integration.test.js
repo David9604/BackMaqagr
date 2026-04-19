@@ -32,7 +32,7 @@ describe('Exports - Integración', () => {
     });
 
     userToken = login.token;
-    userId = login.user.user_id;
+    userId = login.user.id;
 
     const terrainResult = await pool.query(
       `

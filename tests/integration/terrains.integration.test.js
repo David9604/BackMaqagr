@@ -105,12 +105,13 @@ describe('CRUD de Terrenos - Integración', () => {
 
     it('debería soportar paginación', async () => {
       const res = await request
-        .get('/api/terrains?limit=1&offset=0')
+        .get('/api/terrains?limit=1&page=1')
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBeLessThanOrEqual(1);
       expect(res.body.pagination.limit).toBe(1);
+      expect(res.body.pagination.page).toBe(1);
     });
 
     it('no debería mostrar terrenos de otros usuarios', async () => {

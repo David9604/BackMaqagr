@@ -44,8 +44,9 @@ describe("CORS Middleware", () => {
       .get("/api/tractors")
       .set("Origin", "https://sitio-malicioso.com");
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(403);
     expect(response.body.success).toBe(false);
+    expect(response.body.code).toBe("FORBIDDEN");
     expect(response.body.message).toMatch(/CORS/i);
     expect(response.headers["access-control-allow-origin"]).toBeUndefined();
   });
@@ -61,6 +62,20 @@ describe("CORS Middleware", () => {
     expect(allowedMethods).toMatch(/POST/);
     expect(allowedMethods).toMatch(/PUT/);
     expect(allowedMethods).toMatch(/DELETE/);
+    expect(allowedMethods).toMatch(/PATCH/);
+    expect(allowedMethods).toMatch(/OPTIONS/);
+  });
+
+  test("debería permitir origen preview de Vercel (*.vercel.app)", async () => {
+    const response = await request(app)
+      .options("/api/tractors")
+      .set("Origin", "https://my-feature-branch-abc123.vercel.app")
+      .set("Access-Control-Request-Method", "GET");
+
+    expect(response.status).toBe(204);
+    expect(response.headers["access-control-allow-origin"]).toBe(
+      "https://my-feature-branch-abc123.vercel.app",
+    );
   });
 
   test("debería incluir los headers permitidos en el preflight", async () => {

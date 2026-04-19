@@ -36,11 +36,11 @@ const router = Router();
  *           default: 10
  *         description: Cantidad de registros por página
  *       - in: query
- *         name: offset
+ *         name: page
  *         schema:
  *           type: integer
- *           default: 0
- *         description: Número de registros a saltar
+ *           default: 1
+ *         description: Número de página
  *     responses:
  *       200:
  *         description: Lista de terrenos del usuario
@@ -59,15 +59,18 @@ const router = Router();
  *                 pagination:
  *                   type: object
  *                   properties:
+ *                     page:
+ *                       type: integer
+ *                       example: 1
  *                     total:
  *                       type: integer
  *                       example: 5
  *                     limit:
  *                       type: integer
  *                       example: 10
- *                     offset:
+ *                     totalPages:
  *                       type: integer
- *                       example: 0
+ *                       example: 1
  *       401:
  *         description: Token no proporcionado o inválido
  *         content:

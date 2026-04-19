@@ -32,6 +32,11 @@ export const schemas = {
         type: 'boolean',
         example: false,
       },
+      code: {
+        type: 'string',
+        example: 'VALIDATION_ERROR',
+        description: 'Código estable para manejo de errores en frontend',
+      },
       message: {
         type: 'string',
         example: 'Error en la operación',
@@ -61,7 +66,8 @@ export const schemas = {
         properties: {
           total: { type: 'integer', example: 50 },
           limit: { type: 'integer', example: 10 },
-          offset: { type: 'integer', example: 0 },
+          page: { type: 'integer', example: 1 },
+          pages: { type: 'integer', example: 5 },
         },
       },
     },
@@ -163,54 +169,49 @@ export const schemas = {
   AuthResponse: {
     type: 'object',
     properties: {
-      success: { type: 'boolean', example: true },
-      message: { type: 'string', example: 'Usuario registrado exitosamente' },
-      data: {
+      token: {
+        type: 'string',
+        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        description: 'Token JWT para autenticación',
+      },
+      user: {
         type: 'object',
         properties: {
-          user: {
-            type: 'object',
-            properties: {
-              user_id: { type: 'integer', example: 1 },
-              name: { type: 'string', example: 'Juan Pérez' },
-              email: { type: 'string', example: 'juan@example.com' },
-              role_id: { type: 'integer', example: 2 },
-              status: { type: 'string', example: 'active' },
-              registration_date: { type: 'string', format: 'date-time' },
-            },
-          },
-          token: {
-            type: 'string',
-            example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-            description: 'Token JWT para autenticación',
-          },
+          id: { type: 'integer', example: 1 },
+          name: { type: 'string', example: 'Juan Pérez' },
+          email: { type: 'string', example: 'juan@example.com' },
         },
       },
+      role: {
+        type: 'string',
+        enum: ['admin', 'user', 'operator'],
+        example: 'user',
+      },
+      role_id: { type: 'integer', example: 2 },
     },
   },
 
   LoginResponse: {
     type: 'object',
     properties: {
-      success: { type: 'boolean', example: true },
-      message: { type: 'string', example: 'Inicio de sesión exitoso' },
-      data: {
+      token: {
+        type: 'string',
+        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      },
+      user: {
         type: 'object',
         properties: {
-          token: {
-            type: 'string',
-            example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-          },
-          user: {
-            type: 'object',
-            properties: {
-              name: { type: 'string', example: 'Juan Pérez' },
-              email: { type: 'string', example: 'juan@example.com' },
-              role_id: { type: 'integer', example: 2 },
-            },
-          },
+          id: { type: 'integer', example: 1 },
+          name: { type: 'string', example: 'Juan Pérez' },
+          email: { type: 'string', example: 'juan@example.com' },
         },
       },
+      role: {
+        type: 'string',
+        enum: ['admin', 'user', 'operator'],
+        example: 'user',
+      },
+      role_id: { type: 'integer', example: 2 },
     },
   },
 

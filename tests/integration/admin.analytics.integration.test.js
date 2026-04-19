@@ -36,14 +36,14 @@ describe('Admin Analytics - Integración', () => {
       password: 'TestPassword1',
     });
     userToken = normalUser.token;
-    normalUserId = normalUser.user.user_id;
+    normalUserId = normalUser.user.id;
 
     const inactiveUser = await registerAndGetToken({
       name: 'Inactive Analytics User',
       email: 'inactive.analytics@integration.test',
       password: 'TestPassword1',
     });
-    inactiveUserId = inactiveUser.user.user_id;
+    inactiveUserId = inactiveUser.user.id;
 
     await pool.query(
       "UPDATE users SET status = 'inactive' WHERE user_id = $1",
