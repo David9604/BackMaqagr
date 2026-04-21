@@ -1,6 +1,8 @@
 import Implement from "../models/Implement.js";
 import { asyncHandler } from "../middleware/error.middleware.js";
 import { applyPagination } from "../utils/pagination.util.js";
+import { uploadToGCS, deleteFromGCS, extractGCSPath } from '../config/storage.js';
+import logger from '../utils/logger.js';
 
 export const getAllImplements = asyncHandler(async (req, res) => {
   const implementsList = await Implement.getAll();
@@ -215,7 +217,6 @@ export const createImplement = asyncHandler(async (req, res) => {
   const {
     implement_name,
     brand,
-    image_url,
     power_requirement_hp,
     working_width_m,
     soil_type,
@@ -224,6 +225,24 @@ export const createImplement = asyncHandler(async (req, res) => {
     implement_type,
     status,
   } = req.body || {};
+
+  // If a file was uploaded, upload it to GCS and use the URL
+  let image_url = req.body?.image_url;
+  if (req.file) {
+    try {
+      const timestamp = Date.now();
+      const originalName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const destination = `implements/${timestamp}-${originalName}`;
+      image_url = await uploadToGCS(req.file.buffer, destination, req.file.mimetype);
+    } catch (uploadError) {
+      logger.error('Error uploading implement image', { error: uploadError.message });
+      return res.status(500).json({
+        success: false,
+        code: 'UPLOAD_ERROR',
+        message: 'Error al subir la imagen del implemento',
+      });
+    }
+  }
 
   // Validaciones de negocio
   if (
@@ -295,7 +314,6 @@ export const updateImplement = asyncHandler(async (req, res) => {
   const {
     implement_name,
     brand,
-    image_url,
     power_requirement_hp,
     working_width_m,
     soil_type,
@@ -304,6 +322,32 @@ export const updateImplement = asyncHandler(async (req, res) => {
     implement_type,
     status,
   } = req.body || {};
+
+  // If a new file was uploaded, upload it to GCS and replace the old image_url
+  let image_url = req.body?.image_url;
+  if (req.file) {
+    try {
+      const timestamp = Date.now();
+      const originalName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const destination = `implements/${timestamp}-${originalName}`;
+      image_url = await uploadToGCS(req.file.buffer, destination, req.file.mimetype);
+
+      // Delete old image from GCS if it existed
+      if (existing.image_url) {
+        const oldPath = extractGCSPath(existing.image_url);
+        if (oldPath) {
+          deleteFromGCS(oldPath).catch(err => logger.warn('Failed to delete old implement image', { error: err.message }));
+        }
+      }
+    } catch (uploadError) {
+      logger.error('Error uploading implement image', { error: uploadError.message });
+      return res.status(500).json({
+        success: false,
+        code: 'UPLOAD_ERROR',
+        message: 'Error al subir la imagen del implemento',
+      });
+    }
+  }
 
   // Validaciones de negocio
   if (

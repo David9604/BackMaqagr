@@ -14,6 +14,7 @@ import {
 } from "../middleware/auth.middleware.js";
 import { validateImplement } from "../middleware/validation.middleware.js";
 import { paginationMiddleware } from "../middleware/pagination.middleware.js";
+import { uploadMiddleware } from "../middleware/upload.middleware.js";
 
 import {
   cacheMiddleware,
@@ -392,6 +393,7 @@ router.post(
   "/",
   verifyTokenMiddleware,
   isAdmin,
+  uploadMiddleware,
   validateImplement,
   createImplement,
 );
@@ -475,6 +477,7 @@ router.put(
   "/:id",
   verifyTokenMiddleware,
   isAdmin,
+  uploadMiddleware,
   validateImplement,
   updateImplement,
 );

@@ -101,6 +101,29 @@ export const errorHandler = (err, req, res, next) => {
   // Casteo de ID
   if (err.name === 'CastError')          { statusCode = 400; message = 'Formato de ID inválido'; }
 
+  // Multer upload errors
+  if (err.name === 'MulterError') {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      statusCode = 413;
+      message = 'El archivo es demasiado grande. Tamaño máximo: 5MB.';
+    } else if (err.code === 'LIMIT_FILE_COUNT') {
+      statusCode = 400;
+      message = 'Demasiados archivos. Solo se permite uno.';
+    } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+      statusCode = 400;
+      message = 'Campo de archivo inesperado. Usa "image" como nombre de campo.';
+    } else {
+      statusCode = 400;
+      message = 'Error al subir el archivo.';
+    }
+  }
+
+  // File type filter error (from upload.middleware.js)
+  if (err.message && err.message.includes('Tipo de archivo no permitido')) {
+    statusCode = 400;
+    message = err.message;
+  }
+
   // Errores de PostgreSQL — log incluye query context si está disponible
   if (err.code) {
     const pgMap = {

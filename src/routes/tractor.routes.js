@@ -14,6 +14,7 @@ import {
 } from "../middleware/auth.middleware.js";
 import { validateTractor } from "../middleware/validation.middleware.js";
 import { paginationMiddleware } from "../middleware/pagination.middleware.js";
+import { uploadMiddleware } from "../middleware/upload.middleware.js";
 
 import {
   invalidateCacheMiddleware,
@@ -398,6 +399,7 @@ router.post(
   "/",
   verifyTokenMiddleware,
   isAdmin,
+  uploadMiddleware,
   validateTractor,
   invalidateCacheMiddleware("*tractors*"),
   createTractor,
@@ -482,6 +484,7 @@ router.put(
   "/:id",
   verifyTokenMiddleware,
   isAdmin,
+  uploadMiddleware,
   validateTractor,
   invalidateCacheMiddleware(["*tractors*", "*recommendations*"]),
   updateTractor,

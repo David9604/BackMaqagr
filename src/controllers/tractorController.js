@@ -3,6 +3,8 @@ import { asyncHandler } from '../middleware/error.middleware.js';
 import { notifyUsersAboutNewTractor } from '../services/notificationService.js';
 import Recommendation from "../models/Recommendation.js";
 import { applyPagination } from '../utils/pagination.util.js';
+import { uploadToGCS, deleteFromGCS, extractGCSPath } from '../config/storage.js';
+import logger from '../utils/logger.js';
 
 export const getAllTractors = asyncHandler(async (req, res) => {
   const tractors = await Tractor.getAll();
@@ -185,7 +187,6 @@ export const createTractor = asyncHandler(async (req, res) => {
     name,
     brand,
     model,
-    image_url,
     model_year,
     engine_power_hp,
     price,
@@ -197,7 +198,27 @@ export const createTractor = asyncHandler(async (req, res) => {
     tire_diameter_mm,
     tire_pressure_psi,
     status,
+    fuel_consumption_lph,
+    maintenance_cost_per_hour,
   } = req.body || {};
+
+  // If a file was uploaded, upload it to GCS and use the URL
+  let image_url = req.body?.image_url;
+  if (req.file) {
+    try {
+      const timestamp = Date.now();
+      const originalName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const destination = `tractors/${timestamp}-${originalName}`;
+      image_url = await uploadToGCS(req.file.buffer, destination, req.file.mimetype);
+    } catch (uploadError) {
+      logger.error('Error uploading tractor image', { error: uploadError.message });
+      return res.status(500).json({
+        success: false,
+        code: 'UPLOAD_ERROR',
+        message: 'Error al subir la imagen del tractor',
+      });
+    }
+  }
 
   // Validaciones de negocio
   if (
@@ -290,7 +311,6 @@ export const updateTractor = asyncHandler(async (req, res) => {
     name,
     brand,
     model,
-    image_url,
     model_year,
     engine_power_hp,
     price,
@@ -302,7 +322,35 @@ export const updateTractor = asyncHandler(async (req, res) => {
     tire_diameter_mm,
     tire_pressure_psi,
     status,
+    fuel_consumption_lph,
+    maintenance_cost_per_hour,
   } = req.body || {};
+
+  // If a new file was uploaded, upload it to GCS and replace the old image_url
+  let image_url = req.body?.image_url;
+  if (req.file) {
+    try {
+      const timestamp = Date.now();
+      const originalName = req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const destination = `tractors/${timestamp}-${originalName}`;
+      image_url = await uploadToGCS(req.file.buffer, destination, req.file.mimetype);
+
+      // Delete old image from GCS if it existed
+      if (existing.image_url) {
+        const oldPath = extractGCSPath(existing.image_url);
+        if (oldPath) {
+          deleteFromGCS(oldPath).catch(err => logger.warn('Failed to delete old tractor image', { error: err.message }));
+        }
+      }
+    } catch (uploadError) {
+      logger.error('Error uploading tractor image', { error: uploadError.message });
+      return res.status(500).json({
+        success: false,
+        code: 'UPLOAD_ERROR',
+        message: 'Error al subir la imagen del tractor',
+      });
+    }
+  }
 
   // Validaciones de negocio
   if (
@@ -354,6 +402,14 @@ export const updateTractor = asyncHandler(async (req, res) => {
     tire_pressure_psi:
       tire_pressure_psi !== undefined && tire_pressure_psi !== null
         ? Number(tire_pressure_psi)
+        : undefined,
+    fuel_consumption_lph:
+      fuel_consumption_lph !== undefined && fuel_consumption_lph !== null
+        ? Number(fuel_consumption_lph)
+        : undefined,
+    maintenance_cost_per_hour:
+      maintenance_cost_per_hour !== undefined && maintenance_cost_per_hour !== null
+        ? Number(maintenance_cost_per_hour)
         : undefined,
     status,
   };
