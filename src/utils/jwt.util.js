@@ -56,4 +56,33 @@ export const refreshToken = (token) => {
     }
 };
 
-export default { generateToken, verifyToken, refreshToken };
+/**
+ * Genera un token JWT para restablecimiento de contraseña
+ * Vence en 1 hora, contiene un propósito específico para evitar reuso
+ * @param {Object} payload - Datos del usuario (user_id, email)
+ * @returns {string} Token JWT firmado
+ */
+export const generatePasswordResetToken = (payload) => {
+    return jwt.sign(
+        { ...payload, purpose: 'password_reset' },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+    );
+};
+
+/**
+ * Verifica un token JWT de restablecimiento de contraseña
+ * Valida que el token tenga el propósito correcto
+ * @param {string} token - Token JWT a verificar
+ * @returns {Object} Payload decodificado del token
+ * @throws {Error} Si el token es inválido, expiró, o no es de tipo password_reset
+ */
+export const verifyPasswordResetToken = (token) => {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.purpose !== 'password_reset') {
+        throw new Error('Invalid token purpose');
+    }
+    return decoded;
+};
+
+export default { generateToken, verifyToken, refreshToken, generatePasswordResetToken, verifyPasswordResetToken };

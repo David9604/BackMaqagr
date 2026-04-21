@@ -9,6 +9,11 @@ import {
 import { isAdmin } from '../middleware/auth.middleware.js';
 import { notifySystemMaintenance } from '../services/notificationService.js';
 import { successResponse } from '../utils/response.util.js';
+import {
+    getAllUsers,
+    getUserById,
+    updateUser,
+} from '../controllers/adminUserController.js';
 
 const router = Router();
 
@@ -179,5 +184,99 @@ router.post('/notifications/broadcast', verifyTokenMiddleware, isAdmin, async (r
         res.status(500).json({ message: 'Error enviando notificaciones masivas', error: error.message });
     }
 });
+
+// ==================== USER MANAGEMENT ====================
+
+/**
+ * @swagger
+ * /api/admin/users:
+ *   get:
+ *     summary: Obtener todos los usuarios (Admin)
+ *     description: Retorna la lista de todos los usuarios con su rol y estado. Solo administradores.
+ *     tags: [Admin]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de usuarios obtenida exitosamente
+ *       401:
+ *         description: Token no proporcionado o inválido
+ *       403:
+ *         description: Acceso restringido a administradores
+ */
+router.get('/users', verifyTokenMiddleware, requireRole('admin'), getAllUsers);
+
+/**
+ * @swagger
+ * /api/admin/users/{id}:
+ *   get:
+ *     summary: Obtener usuario por ID (Admin)
+ *     description: Retorna los datos de un usuario específico. Solo administradores.
+ *     tags: [Admin]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del usuario
+ *     responses:
+ *       200:
+ *         description: Usuario encontrado
+ *       404:
+ *         description: Usuario no encontrado
+ */
+router.get('/users/:id', verifyTokenMiddleware, requireRole('admin'), getUserById);
+
+/**
+ * @swagger
+ * /api/admin/users/{id}:
+ *   put:
+ *     summary: Actualizar usuario (Admin)
+ *     description: |
+ *       Permite actualizar el rol, estado, nombre o email de un usuario. Solo administradores.
+ *       Campos disponibles: name, email, role_id (1=admin, 2=user), status (active/inactive/suspended).
+ *     tags: [Admin]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del usuario a actualizar
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Juan Pérez"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "juan@example.com"
+ *               role_id:
+ *                 type: integer
+ *                 enum: [1, 2]
+ *                 description: "1=admin, 2=user"
+ *               status:
+ *                 type: string
+ *                 enum: [active, inactive, suspended]
+ *     responses:
+ *       200:
+ *         description: Usuario actualizado exitosamente
+ *       400:
+ *         description: Datos inválidos
+ *       404:
+ *         description: Usuario no encontrado
+ */
+router.put('/users/:id', verifyTokenMiddleware, requireRole('admin'), updateUser);
 
 export default router;

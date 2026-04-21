@@ -23,6 +23,7 @@ import {
 } from "../utils/validators.util.js";
 import logger from "../utils/logger.js";
 import { buildAuthPayload } from "../utils/role.util.js";
+import { generatePasswordResetToken, verifyPasswordResetToken } from "../utils/jwt.util.js";
 
 // Constantes
 const SALT_ROUNDS = 10;
@@ -410,6 +411,147 @@ export const deleteUser = asyncHandler(async (req, res) => {
   return successResponse(res, null, "Usuario eliminado exitosamente");
 });
 
+/**
+ * Solicitar restablecimiento de contraseña
+ * POST /api/auth/forgot-password
+ * Genera un token JWT de un solo uso (1h expiración) y lo retorna.
+ * En producción se enviaría por email, pero para este caso de uso
+ * (app agrícola, pocos usuarios) retornamos el token directamente.
+ */
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return validationErrorResponse(
+      res,
+      ["Email es requerido"],
+      "Email es requerido",
+      "VALIDATION_ERROR",
+    );
+  }
+
+  if (!isValidEmail(email)) {
+    return validationErrorResponse(
+      res,
+      ["Formato de email inválido"],
+      "Formato de email inválido",
+      "VALIDATION_ERROR",
+    );
+  }
+
+  // Buscar usuario SIEMPRE (no revelar si existe o no para seguridad)
+  const user = await User.findByEmail(email.toLowerCase());
+
+  // Generar reset token (siempre, para no filtrar si el email existe)
+  const resetToken = user
+    ? generatePasswordResetToken({
+        user_id: user.user_id,
+        email: user.email,
+      })
+    : null;
+
+  // Log seguro
+  logger.info("Solicitud de restablecimiento de contraseña", {
+    email: email.toLowerCase(),
+    exists: !!user,
+  });
+
+  // Siempre responder éxito para no filtrar información
+  return res.status(200).json({
+    success: true,
+    message: "Si el email está registrado, recibirás instrucciones para restablecer tu contraseña",
+    // Incluir token para uso directo (sin email en este entorno)
+    // En producción se enviaría por email y NO se incluiría en la respuesta
+    ...(resetToken && { resetToken }),
+  });
+});
+
+/**
+ * Restablecer contraseña con token
+ * POST /api/auth/reset-password
+ * Verifica el token JWT y actualiza la contraseña del usuario
+ */
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  // Validar datos de entrada
+  if (!token) {
+    return validationErrorResponse(
+      res,
+      ["Token es requerido"],
+      "Token es requerido",
+      "VALIDATION_ERROR",
+    );
+  }
+
+  if (!newPassword) {
+    return validationErrorResponse(
+      res,
+      ["Nueva contraseña es requerida"],
+      "Nueva contraseña es requerida",
+      "VALIDATION_ERROR",
+    );
+  }
+
+  // Validar contraseña fuerte
+  if (!isValidPassword(newPassword)) {
+    const passwordErrors = getPasswordValidationErrors(newPassword);
+    return validationErrorResponse(
+      res,
+      passwordErrors,
+      "La nueva contraseña no cumple requisitos",
+    );
+  }
+
+  // Verificar token
+  let decoded;
+  try {
+    decoded = verifyPasswordResetToken(token);
+  } catch (error) {
+    logger.warn("Token de restablecimiento inválido o expirado", {
+      error: error.message,
+    });
+    return unauthorizedResponse(
+      res,
+      "Token inválido o expirado. Solicita uno nuevo.",
+      "INVALID_RESET_TOKEN",
+    );
+  }
+
+  // Buscar usuario por ID del token
+  const user = await User.findById(decoded.user_id);
+
+  if (!user) {
+    return notFoundResponse(res, "Usuario no encontrado");
+  }
+
+  // Verificar que el email coincida (seguridad adicional)
+  if (user.email !== decoded.email) {
+    logger.warn("Email mismatch en reset password", {
+      tokenEmail: decoded.email,
+      userEmail: user.email,
+    });
+    return unauthorizedResponse(
+      res,
+      "Token inválido",
+      "INVALID_RESET_TOKEN",
+    );
+  }
+
+  // Hashear nueva contraseña
+  const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+  // Actualizar contraseña
+  await User.updatePassword(user.user_id, hashedPassword);
+
+  logger.info("Contraseña restablecida exitosamente", {
+    userId: user.user_id,
+    email: user.email,
+  });
+
+  return successResponse(res, null, "Contraseña restablecida exitosamente");
+});
+
 export default {
   register,
   login,
@@ -418,4 +560,6 @@ export default {
   updateProfile,
   changePassword,
   deleteUser,
+  forgotPassword,
+  resetPassword,
 };

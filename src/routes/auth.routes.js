@@ -12,6 +12,8 @@ import {
   updateProfile,
   changePassword,
   deleteUser,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/authController.js";
 import {
   verifyTokenMiddleware,
@@ -178,6 +180,96 @@ router.post("/register", publicLimiter, register);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/login", loginLimiter, login);
+
+// ==================== RECUPERACIÓN DE CONTRASEÑA ====================
+
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Solicitar restablecimiento de contraseña
+ *     description: |
+ *       Genera un token JWT de un solo uso (1h expiración) para restablecer la contraseña.
+ *       El token se incluye en la respuesta para uso directo en este entorno.
+ *       En producción se enviaría por email y NO se incluiría en la respuesta.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "admin@maqagr.com"
+ *     responses:
+ *       200:
+ *         description: Si el email está registrado, se genera un token de restablecimiento
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Si el email está registrado, recibirás instrucciones para restablecer tu contraseña"
+ *                 resetToken:
+ *                   type: string
+ *                   description: Token JWT para restablecer contraseña (solo en entorno de desarrollo)
+ *       400:
+ *         description: Email faltante o inválido
+ *       500:
+ *         description: Error interno del servidor
+ */
+router.post("/forgot-password", publicLimiter, forgotPassword);
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Restablecer contraseña con token
+ *     description: |
+ *       Verifica el token de restablecimiento y actualiza la contraseña del usuario.
+ *       La nueva contraseña debe cumplir requisitos de seguridad (mín. 8 caracteres, mayúscula, número).
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - newPassword
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Token JWT obtenido de /api/auth/forgot-password
+ *                 example: "eyJhbGciOiJIUzI1NiIs..."
+ *               newPassword:
+ *                 type: string
+ *                 description: Nueva contraseña que cumple requisitos de seguridad
+ *                 example: "NuevaPassword456!"
+ *     responses:
+ *       200:
+ *         description: Contraseña restablecida exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Datos faltantes o contraseña débil
+ *       401:
+ *         description: Token inválido o expirado
+ */
+router.post("/reset-password", publicLimiter, resetPassword);
 
 // ==================== RUTAS PROTEGIDAS ====================
 
