@@ -11,7 +11,10 @@ import logger from '../utils/logger.js';
 // In development, uses GOOGLE_APPLICATION_CREDENTIALS env var or gcloud CLI
 const storage = new Storage();
 
-const BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'maqagr-143f3.firebasestorage.app';
+if (!process.env.GCS_BUCKET_NAME) {
+  throw new Error('GCS_BUCKET_NAME environment variable is required');
+}
+const BUCKET_NAME = process.env.GCS_BUCKET_NAME;
 const bucket = storage.bucket(BUCKET_NAME);
 
 /**

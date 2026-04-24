@@ -1,4 +1,3 @@
-import { Op, col, fn, literal } from 'sequelize';
 import redisClient from '../config/redis.js';
 import { asyncHandler } from '../middleware/error.middleware.js';
 import {
@@ -53,21 +52,6 @@ const fillDailySeries = (rows) => {
   return toChartData(data);
 };
 
-const getTrendRows = async (bucket, format) => AnalyticsQuery.findAll({
-  attributes: [
-    [fn('TO_CHAR', bucket, format), 'label'],
-    [fn('SUM', literal('1')), 'value'],
-  ],
-  where: {
-    query_date: {
-      [Op.gte]: getLast30DaysStart(),
-    },
-  },
-  group: [bucket],
-  order: [[bucket, 'ASC']],
-  raw: true,
-});
-
 const getOverviewCache = async () => {
   if (!canUseRedisCache()) {
     return null;
@@ -105,9 +89,7 @@ export const getOverviewStats = asyncHandler(async (req, res) => {
     return res.status(200).json(cachedResponse);
   }
 
-  const dayBucket = fn('DATE_TRUNC', 'day', col('query_date'));
-  const weekBucket = fn('DATE_TRUNC', 'week', col('query_date'));
-  const monthBucket = fn('DATE_TRUNC', 'month', col('query_date'));
+  const since = getLast30DaysStart();
 
   const [
     usersByStatus,
@@ -120,22 +102,15 @@ export const getOverviewStats = asyncHandler(async (req, res) => {
     byWeekRows,
     byMonthRows,
   ] = await Promise.all([
-    AnalyticsUser.findAll({
-      attributes: [
-        'status',
-        [fn('COUNT', col('user_id')), 'value'],
-      ],
-      group: ['status'],
-      raw: true,
-    }),
+    AnalyticsUser.countByStatus(),
     AnalyticsTractor.count(),
     AnalyticsImplement.count(),
     AnalyticsTerrain.count(),
     AnalyticsQuery.count(),
     AnalyticsRecommendation.count(),
-    getTrendRows(dayBucket, 'YYYY-MM-DD'),
-    getTrendRows(weekBucket, 'IYYY-IW'),
-    getTrendRows(monthBucket, 'YYYY-MM'),
+    AnalyticsQuery.trendByBucket("DATE_TRUNC('day', query_date)", 'YYYY-MM-DD', since),
+    AnalyticsQuery.trendByBucket("DATE_TRUNC('week', query_date)", 'IYYY-IW', since),
+    AnalyticsQuery.trendByBucket("DATE_TRUNC('month', query_date)", 'YYYY-MM', since),
   ]);
 
   const activeUsers = usersByStatus.reduce(
@@ -179,25 +154,6 @@ export const getOverviewStats = asyncHandler(async (req, res) => {
 });
 
 export const getRecommendationStats = asyncHandler(async (req, res) => {
-  const powerRangeLabel = `
-    CASE
-      WHEN "tractor"."engine_power_hp" < 60 THEN '0-59 HP'
-      WHEN "tractor"."engine_power_hp" BETWEEN 60 AND 99 THEN '60-99 HP'
-      WHEN "tractor"."engine_power_hp" BETWEEN 100 AND 149 THEN '100-149 HP'
-      WHEN "tractor"."engine_power_hp" BETWEEN 150 AND 199 THEN '150-199 HP'
-      ELSE '200+ HP'
-    END
-  `;
-  const powerRangeOrder = `
-    CASE
-      WHEN "tractor"."engine_power_hp" < 60 THEN 1
-      WHEN "tractor"."engine_power_hp" BETWEEN 60 AND 99 THEN 2
-      WHEN "tractor"."engine_power_hp" BETWEEN 100 AND 149 THEN 3
-      WHEN "tractor"."engine_power_hp" BETWEEN 150 AND 199 THEN 4
-      ELSE 5
-    END
-  `;
-
   const [
     topTractorsRows,
     topImplementsRows,
@@ -205,111 +161,11 @@ export const getRecommendationStats = asyncHandler(async (req, res) => {
     powerRangeDistributionRows,
     averagePowerRow,
   ] = await Promise.all([
-    AnalyticsRecommendation.findAll({
-      attributes: [
-        'tractor_id',
-        [col('tractor.name'), 'name'],
-        [col('tractor.brand'), 'brand'],
-        [col('tractor.model'), 'model'],
-        [fn('COUNT', col('AnalyticsRecommendation.recommendation_id')), 'value'],
-      ],
-      include: [
-        {
-          model: AnalyticsTractor,
-          as: 'tractor',
-          attributes: [],
-          required: true,
-        },
-      ],
-      group: [
-        'AnalyticsRecommendation.tractor_id',
-        'tractor.tractor_id',
-        'tractor.name',
-        'tractor.brand',
-        'tractor.model',
-      ],
-      order: [literal('"value" DESC'), literal('"tractor"."name" ASC')],
-      limit: 10,
-      subQuery: false,
-      raw: true,
-    }),
-    AnalyticsRecommendation.findAll({
-      attributes: [
-        'implement_id',
-        [col('implement.implement_name'), 'name'],
-        [col('implement.brand'), 'brand'],
-        [col('implement.implement_type'), 'implement_type'],
-        [fn('COUNT', col('AnalyticsRecommendation.recommendation_id')), 'value'],
-      ],
-      include: [
-        {
-          model: AnalyticsImplement,
-          as: 'implement',
-          attributes: [],
-          required: true,
-        },
-      ],
-      group: [
-        'AnalyticsRecommendation.implement_id',
-        'implement.implement_id',
-        'implement.implement_name',
-        'implement.brand',
-        'implement.implement_type',
-      ],
-      order: [literal('"value" DESC'), literal('"implement"."implement_name" ASC')],
-      limit: 10,
-      subQuery: false,
-      raw: true,
-    }),
-    AnalyticsRecommendation.findAll({
-      attributes: [
-        [fn('COALESCE', col('terrain.soil_type'), 'Sin tipo'), 'label'],
-        [fn('COUNT', col('AnalyticsRecommendation.recommendation_id')), 'value'],
-      ],
-      include: [
-        {
-          model: AnalyticsTerrain,
-          as: 'terrain',
-          attributes: [],
-          required: false,
-        },
-      ],
-      group: [fn('COALESCE', col('terrain.soil_type'), 'Sin tipo')],
-      order: [literal('"value" DESC'), literal('"label" ASC')],
-      raw: true,
-    }),
-    AnalyticsRecommendation.findAll({
-      attributes: [
-        [literal(powerRangeLabel), 'label'],
-        [literal(powerRangeOrder), 'bucket_order'],
-        [fn('COUNT', col('AnalyticsRecommendation.recommendation_id')), 'value'],
-      ],
-      include: [
-        {
-          model: AnalyticsTractor,
-          as: 'tractor',
-          attributes: [],
-          required: true,
-        },
-      ],
-      group: [literal(powerRangeLabel), literal(powerRangeOrder)],
-      order: [literal('bucket_order ASC')],
-      raw: true,
-    }),
-    AnalyticsRecommendation.findOne({
-      attributes: [
-        [fn('AVG', col('tractor.engine_power_hp')), 'average_power_hp'],
-      ],
-      include: [
-        {
-          model: AnalyticsTractor,
-          as: 'tractor',
-          attributes: [],
-          required: true,
-        },
-      ],
-      raw: true,
-    }),
+    AnalyticsRecommendation.topTractors(10),
+    AnalyticsRecommendation.topImplements(10),
+    AnalyticsRecommendation.terrainDistribution(),
+    AnalyticsRecommendation.powerRangeDistribution(),
+    AnalyticsRecommendation.averageRecommendedPower(),
   ]);
 
   const topTractors = topTractorsRows.map((row) => ({
@@ -355,8 +211,6 @@ export const getRecommendationStats = asyncHandler(async (req, res) => {
 });
 
 export const getUserStats = asyncHandler(async (req, res) => {
-  const monthBucket = fn('DATE_TRUNC', 'month', col('registration_date'));
-
   const [
     usersByMonthRows,
     totalUsers,
@@ -364,26 +218,11 @@ export const getUserStats = asyncHandler(async (req, res) => {
     totalQueries,
     activeUsersByQuery,
   ] = await Promise.all([
-    AnalyticsUser.findAll({
-      attributes: [
-        [fn('TO_CHAR', monthBucket, 'YYYY-MM'), 'label'],
-        [fn('COUNT', col('user_id')), 'value'],
-      ],
-      group: [monthBucket],
-      order: [[monthBucket, 'ASC']],
-      raw: true,
-    }),
+    AnalyticsUser.countByMonth(),
     AnalyticsUser.count(),
     AnalyticsTerrain.count(),
     AnalyticsQuery.count(),
-    AnalyticsQuery.findAll({
-      attributes: [
-        'user_id',
-        [fn('COUNT', col('query_id')), 'value'],
-      ],
-      group: ['user_id'],
-      raw: true,
-    }),
+    AnalyticsQuery.countByUser(),
   ]);
 
   const activeUsers = activeUsersByQuery.length;

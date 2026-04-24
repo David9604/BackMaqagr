@@ -458,6 +458,14 @@ export const deleteTractor = asyncHandler(async (req, res) => {
     });
   }
 
+  // Soft delete and clean up GCS image
+  if (existing.image_url) {
+    const oldPath = extractGCSPath(existing.image_url);
+    if (oldPath) {
+      deleteFromGCS(oldPath).catch(err => logger.warn('Failed to delete tractor image on soft delete', { error: err.message }));
+    }
+  }
+
   const updated = await Tractor.update(id, { status: "inactive" });
 
   return res.json({

@@ -416,6 +416,14 @@ export const deleteImplement = asyncHandler(async (req, res) => {
     });
   }
 
+  // Clean up GCS image on soft delete
+  if (existing.image_url) {
+    const oldPath = extractGCSPath(existing.image_url);
+    if (oldPath) {
+      deleteFromGCS(oldPath).catch(err => logger.warn('Failed to delete implement image on soft delete', { error: err.message }));
+    }
+  }
+
   // Soft delete - cambiar status a 'inactive'
   const updated = await Implement.update(id, { status: "inactive" });
 
