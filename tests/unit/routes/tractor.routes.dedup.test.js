@@ -96,12 +96,14 @@ describe("tractor.routes duplicate cleanup", () => {
 
     expect(postRoute.route.stack[0].handle).toBe(verifyTokenMiddleware);
     expect(postRoute.route.stack[1].handle).toBe(isAdmin);
-    expect(postRoute.route.stack[2].handle).toBe(validateTractor);
+    // uploadMiddleware (multer) sits at stack[2], validateTractor at stack[3]
+    expect(postRoute.route.stack[3].handle).toBe(validateTractor);
     expect(postRoute.route.stack.at(-1).handle).toBe(createTractor);
 
     expect(putRoute.route.stack[0].handle).toBe(verifyTokenMiddleware);
     expect(putRoute.route.stack[1].handle).toBe(isAdmin);
-    expect(putRoute.route.stack[2].handle).toBe(validateTractor);
+    // uploadMiddleware (multer) sits at stack[2], validateTractor at stack[3]
+    expect(putRoute.route.stack[3].handle).toBe(validateTractor);
     expect(putRoute.route.stack.at(-1).handle).toBe(updateTractor);
 
     expect(deleteRoute.route.stack[0].handle).toBe(verifyTokenMiddleware);

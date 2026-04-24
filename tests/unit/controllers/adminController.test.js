@@ -3,16 +3,21 @@ import { jest, describe, test, expect, beforeEach } from '@jest/globals';
 const mockRedisGet = jest.fn();
 const mockRedisSet = jest.fn();
 
-const mockUserFindAll = jest.fn();
+const mockUserCountByStatus = jest.fn();
 const mockUserCount = jest.fn();
+const mockUserCountByMonth = jest.fn();
 const mockTractorCount = jest.fn();
 const mockImplementCount = jest.fn();
 const mockTerrainCount = jest.fn();
 const mockQueryCount = jest.fn();
-const mockQueryFindAll = jest.fn();
+const mockQueryTrendByBucket = jest.fn();
+const mockQueryCountByUser = jest.fn();
 const mockRecommendationCount = jest.fn();
-const mockRecommendationFindAll = jest.fn();
-const mockRecommendationFindOne = jest.fn();
+const mockRecommendationTopTractors = jest.fn();
+const mockRecommendationTopImplements = jest.fn();
+const mockRecommendationTerrainDistribution = jest.fn();
+const mockRecommendationPowerRangeDistribution = jest.fn();
+const mockRecommendationAverageRecommendedPower = jest.fn();
 
 jest.unstable_mockModule('../../../src/config/redis.js', () => ({
   __esModule: true,
@@ -26,8 +31,9 @@ jest.unstable_mockModule('../../../src/config/redis.js', () => ({
 jest.unstable_mockModule('../../../src/models/adminAnalytics.models.js', () => ({
   __esModule: true,
   AnalyticsUser: {
-    findAll: mockUserFindAll,
+    countByStatus: mockUserCountByStatus,
     count: mockUserCount,
+    countByMonth: mockUserCountByMonth,
   },
   AnalyticsTractor: {
     count: mockTractorCount,
@@ -40,12 +46,16 @@ jest.unstable_mockModule('../../../src/models/adminAnalytics.models.js', () => (
   },
   AnalyticsQuery: {
     count: mockQueryCount,
-    findAll: mockQueryFindAll,
+    trendByBucket: mockQueryTrendByBucket,
+    countByUser: mockQueryCountByUser,
   },
   AnalyticsRecommendation: {
     count: mockRecommendationCount,
-    findAll: mockRecommendationFindAll,
-    findOne: mockRecommendationFindOne,
+    topTractors: mockRecommendationTopTractors,
+    topImplements: mockRecommendationTopImplements,
+    terrainDistribution: mockRecommendationTerrainDistribution,
+    powerRangeDistribution: mockRecommendationPowerRangeDistribution,
+    averageRecommendedPower: mockRecommendationAverageRecommendedPower,
   },
 }));
 
@@ -82,16 +92,16 @@ describe('adminController', () => {
       mockRedisGet.mockResolvedValue(null);
       mockRedisSet.mockResolvedValue('OK');
 
-      mockUserFindAll.mockResolvedValue([
-        { status: 'active', value: '2' },
-        { status: 'inactive', value: '1' },
+      mockUserCountByStatus.mockResolvedValue([
+        { status: 'active', value: 2 },
+        { status: 'inactive', value: 1 },
       ]);
       mockTractorCount.mockResolvedValue(3);
       mockImplementCount.mockResolvedValue(3);
       mockTerrainCount.mockResolvedValue(2);
       mockQueryCount.mockResolvedValue(4);
       mockRecommendationCount.mockResolvedValue(5);
-      mockQueryFindAll
+      mockQueryTrendByBucket
         .mockResolvedValueOnce([{ label: '2026-03-01', value: '2' }])
         .mockResolvedValueOnce([{ label: '2026-09', value: '3' }])
         .mockResolvedValueOnce([{ label: '2026-03', value: '4' }]);
@@ -158,9 +168,9 @@ describe('adminController', () => {
       expect(res.setHeader).toHaveBeenCalledWith('X-Cache', 'HIT');
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(cachedPayload);
-      expect(mockUserFindAll).not.toHaveBeenCalled();
+      expect(mockUserCountByStatus).not.toHaveBeenCalled();
       expect(mockTractorCount).not.toHaveBeenCalled();
-      expect(mockQueryFindAll).not.toHaveBeenCalled();
+      expect(mockQueryTrendByBucket).not.toHaveBeenCalled();
       expect(mockRedisSet).not.toHaveBeenCalled();
     });
   });
@@ -171,24 +181,23 @@ describe('adminController', () => {
       const res = createMockRes();
       const next = jest.fn();
 
-      mockRecommendationFindAll
-        .mockResolvedValueOnce([
-          { tractor_id: '1', name: '6130M', brand: 'John Deere', model: '6130M', value: '4' },
-          { tractor_id: '2', name: 'Puma', brand: 'Case', model: 'Puma', value: '2' },
-        ])
-        .mockResolvedValueOnce([
-          { implement_id: '7', name: 'Sembradora', brand: 'Agro', implement_type: 'seeder', value: '3' },
-        ])
-        .mockResolvedValueOnce([
-          { label: 'loam', value: '5' },
-          { label: 'clay', value: '2' },
-        ])
-        .mockResolvedValueOnce([
-          { label: '60-99 HP', bucket_order: 2, value: '2' },
-          { label: '100-149 HP', bucket_order: 3, value: '5' },
-        ]);
-      mockRecommendationFindOne.mockResolvedValue({
-        average_power_hp: '123.456',
+      mockRecommendationTopTractors.mockResolvedValue([
+        { tractor_id: 1, name: '6130M', brand: 'John Deere', model: '6130M', value: 4 },
+        { tractor_id: 2, name: 'Puma', brand: 'Case', model: 'Puma', value: 2 },
+      ]);
+      mockRecommendationTopImplements.mockResolvedValue([
+        { implement_id: 7, name: 'Sembradora', brand: 'Agro', implement_type: 'seeder', value: 3 },
+      ]);
+      mockRecommendationTerrainDistribution.mockResolvedValue([
+        { label: 'loam', value: 5 },
+        { label: 'clay', value: 2 },
+      ]);
+      mockRecommendationPowerRangeDistribution.mockResolvedValue([
+        { label: '60-99 HP', bucket_order: 2, value: 2 },
+        { label: '100-149 HP', bucket_order: 3, value: 5 },
+      ]);
+      mockRecommendationAverageRecommendedPower.mockResolvedValue({
+        average_power_hp: 123.456,
       });
 
       await callHandler(getRecommendationStats, req, res, next);
@@ -265,14 +274,14 @@ describe('adminController', () => {
       const res = createMockRes();
       const next = jest.fn();
 
-      mockUserFindAll.mockResolvedValueOnce([
+      mockUserCountByMonth.mockResolvedValue([
         { label: '2026-01', value: '2' },
         { label: '2026-02', value: '1' },
       ]);
-      mockUserCount.mockResolvedValueOnce(4);
-      mockTerrainCount.mockResolvedValueOnce(10);
-      mockQueryCount.mockResolvedValueOnce(12);
-      mockQueryFindAll.mockResolvedValueOnce([
+      mockUserCount.mockResolvedValue(4);
+      mockTerrainCount.mockResolvedValue(10);
+      mockQueryCount.mockResolvedValue(12);
+      mockQueryCountByUser.mockResolvedValue([
         { user_id: 1, value: '4' },
         { user_id: 2, value: '3' },
         { user_id: 3, value: '1' },
@@ -311,11 +320,11 @@ describe('adminController', () => {
       const req = {};
       const res = createMockRes();
 
-      mockUserFindAll.mockResolvedValueOnce([]);
-      mockUserCount.mockResolvedValueOnce(0);
-      mockTerrainCount.mockResolvedValueOnce(5);
-      mockQueryCount.mockResolvedValueOnce(9);
-      mockQueryFindAll.mockResolvedValueOnce([]);
+      mockUserCountByMonth.mockResolvedValue([]);
+      mockUserCount.mockResolvedValue(0);
+      mockTerrainCount.mockResolvedValue(5);
+      mockQueryCount.mockResolvedValue(9);
+      mockQueryCountByUser.mockResolvedValue([]);
 
       await callHandler(getUserStats, req, res, jest.fn());
 

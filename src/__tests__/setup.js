@@ -10,6 +10,7 @@ process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret-key-for-testing-only';
 process.env.JWT_EXPIRES_IN = '1h';
 process.env.BCRYPT_SALT_ROUNDS = '4'; // Menor para tests más rápidos
+process.env.GCS_BUCKET_NAME = 'test-bucket-for-testing';
 
 // Timeout gestionado por cada configuración de Jest (unit/e2e/integration)
 
