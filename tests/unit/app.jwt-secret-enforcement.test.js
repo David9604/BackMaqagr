@@ -23,6 +23,7 @@ const mockAppDependencies = () => {
   jest.unstable_mockModule('../../src/routes/notification.routes.js', () => ({ default: mockRouter }));
   jest.unstable_mockModule('../../src/routes/health.routes.js', () => ({ default: mockRouter }));
   jest.unstable_mockModule('../../src/routes/admin.routes.js', () => ({ default: mockRouter }));
+  jest.unstable_mockModule('../../src/routes/upload.routes.js', () => ({ default: mockRouter }));
 
   jest.unstable_mockModule('../../src/swagger/swagger.js', () => ({
     setupSwagger: jest.fn(),
@@ -42,6 +43,7 @@ const mockAppDependencies = () => {
   jest.unstable_mockModule('../../src/middleware/error.middleware.js', () => ({
     notFound: mockNoop,
     errorHandler: mockNoop,
+    asyncHandler: mockNoop,
   }));
 
   jest.unstable_mockModule('../../src/middleware/security.middleware.js', () => ({

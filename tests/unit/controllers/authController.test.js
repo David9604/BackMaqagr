@@ -59,10 +59,14 @@ jest.unstable_mockModule("../../../src/utils/jwt.util.js", () => ({
   generateToken: mockGenerateToken,
   verifyToken: jest.fn(),
   refreshToken: jest.fn(),
+  generatePasswordResetToken: jest.fn(),
+  verifyPasswordResetToken: jest.fn(),
   default: {
     generateToken: mockGenerateToken,
     verifyToken: jest.fn(),
     refreshToken: jest.fn(),
+    generatePasswordResetToken: jest.fn(),
+    verifyPasswordResetToken: jest.fn(),
   },
 }));
 

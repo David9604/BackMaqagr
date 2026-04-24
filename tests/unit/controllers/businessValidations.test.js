@@ -83,6 +83,8 @@ jest.unstable_mockModule(
 jest.unstable_mockModule("../../../src/utils/jwt.util.js", () => ({
   extractUserId: jest.fn().mockReturnValue(1),
   generateToken: jest.fn(),
+  generatePasswordResetToken: jest.fn(),
+  verifyPasswordResetToken: jest.fn(),
   __esModule: true,
 }));
 
