@@ -13,15 +13,15 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-  env:
-    GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-    GCP_REGION: ${{ vars.GCP_REGION }}
-    CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
-    GAR_REPOSITORY: ${{ vars.GAR_REPOSITORY }}
-    GAR_LOCATION: ${{ vars.GAR_LOCATION }}
-    WIF_PROVIDER: ${{ vars.WIF_PROVIDER }}
-    WIF_SERVICE_ACCOUNT: ${{ vars.WIF_SERVICE_ACCOUNT }}
-    GCS_BUCKET_NAME: ${{ vars.GCS_BUCKET_NAME }}
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
+      GAR_REPOSITORY: ${{ vars.GAR_REPOSITORY }}
+      GAR_LOCATION: ${{ vars.GAR_LOCATION }}
+      WIF_PROVIDER: ${{ vars.WIF_PROVIDER }}
+      WIF_SERVICE_ACCOUNT: ${{ vars.WIF_SERVICE_ACCOUNT }}
+      GCS_BUCKET_NAME: ${{ vars.GCS_BUCKET_NAME }}
 
     steps:
       - name: Checkout
@@ -99,17 +99,17 @@ jobs:
           docker push "${{ steps.image.outputs.image_uri_sha }}"
           docker push "${{ steps.image.outputs.image_uri_latest }}"
 
-    - name: Deploy to Cloud Run (SHA tag)
-      id: deploy
-      shell: bash
-      run: |
-        set -euo pipefail
-        gcloud run deploy "${CLOUD_RUN_SERVICE}" \
-          --image "${{ steps.image.outputs.image_uri_sha }}" \
-          --region "${GCP_REGION}" \
-          --project "${GCP_PROJECT_ID}" \
-          --set-env-vars "GCS_BUCKET_NAME=${GCS_BUCKET_NAME}" \
-          --quiet
+      - name: Deploy to Cloud Run (SHA tag)
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud run deploy "${CLOUD_RUN_SERVICE}" \
+            --image "${{ steps.image.outputs.image_uri_sha }}" \
+            --region "${GCP_REGION}" \
+            --project "${GCP_PROJECT_ID}" \
+            --set-env-vars "GCS_BUCKET_NAME=${GCS_BUCKET_NAME}" \
+            --quiet
 
           service_url="$(gcloud run services describe "${CLOUD_RUN_SERVICE}" --region "${GCP_REGION}" --project "${GCP_PROJECT_ID}" --format='value(status.url)')"
           latest_revision="$(gcloud run services describe "${CLOUD_RUN_SERVICE}" --region "${GCP_REGION}" --project "${GCP_PROJECT_ID}" --format='value(status.latestReadyRevisionName)')"
