@@ -91,71 +91,46 @@ router.post('/power-loss', verifyTokenMiddleware, validatePowerLossRequest, calc
 /**
  * @swagger
  * /api/calculations/direct-power-loss:
- * post:
- *   summary: Calcular pérdidas de potencia con datos manuales
- *   description: |
- *     Flujo "Tengo Tractor" — acepta datos crudos sin IDs de DB.
- *     No requiere tractor_id ni terrain_id.
- *   tags: [Calculations]
- * requestBody:
- *     required: true
- *     content:
- *       application/json:
- *         schema:
- *           type: object
- *           required: [engine_power_hp, weight_kg, soil_type, altitude_m, ambient_temperature_c, slope_percent, slippage_percent]
- *           properties:
- *             engine_power_hp:
- *               type: number
- *             weight_kg:
- *               type: number
- *             soil_type:
- *               type: string
- *             altitude_m:
- *               type: number
- *             ambient_temperature_c:
- *               type: number
- *             slope_percent:
- *               type: number
- *             slippage_percent:
- *               type: number
- *             has_turbo:
- *               type: boolean
- *             working_speed_kmh:
- *               type: number
- *               default: 7
- *             carried_objects_weight_kg:
- *               type: number
- *               default: 0
+ *   post:
+ *     summary: Calcular perdidas de potencia con datos manuales
+ *     description: Flujo Tengo Tractor - acepta datos crudos sin IDs de DB. No requiere tractor_id ni terrain_id. No requiere login.
+ *     tags: [Calculations]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/DirectPowerLossRequest'
+ *     responses:
+ *       200:
+ *         description: Calculo de perdidas de potencia realizado exitosamente
+ *       400:
+ *         description: Campos requeridos faltantes o datos invalidos
+ *       500:
+ *         description: Error interno del servidor
  */
 router.post('/direct-power-loss', validateDirectPowerLossRequest, calculateDirectPowerLoss);
 
 /**
  * @swagger
  * /api/calculations/direct-minimum-power:
- * post:
- * summary: Calcular potencia mínima con datos manuales
- * description: |
- * Flujo "Tengo Maquinaria" — acepta datos crudos sin IDs de DB.
- * No requiere implement_id ni terrain_id. No requiere login.
- * tags: [Calculations]
- * requestBody:
- * required: true
- * content:
- * application/json:
- * schema:
- * type: object
- * required: [power_requirement_hp, soil_type, slope_percentage]
- * properties:
- * power_requirement_hp:
- * type: number
- * working_depth_m:
- * type: number
- * default: 0.25
- * soil_type:
- * type: string
- * slope_percentage:
- * type: number
+ *   post:
+ *     summary: Calcular potencia minima con datos manuales
+ *     description: Flujo Tengo Maquinaria - acepta datos crudos sin IDs de DB. No requiere implement_id ni terrain_id. No requiere login.
+ *     tags: [Calculations]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/DirectMinimumPowerRequest'
+ *     responses:
+ *       200:
+ *         description: Calculo de potencia minima completado con recomendaciones
+ *       400:
+ *         description: Campos requeridos faltantes o datos invalidos
+ *       500:
+ *         description: Error interno del servidor
  */
 router.post('/direct-minimum-power', validateDirectMinimumPowerRequest, calculateDirectMinimumPower);
 

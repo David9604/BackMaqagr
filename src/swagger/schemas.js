@@ -457,6 +457,104 @@ export const schemas = {
     },
   },
 
+  DirectPowerLossRequest: {
+    type: 'object',
+    required: ['engine_power_hp', 'weight_kg', 'soil_type', 'altitude_m', 'ambient_temperature_c', 'slope_percent', 'slippage_percent'],
+    properties: {
+      engine_power_hp: {
+        type: 'number',
+        format: 'float',
+        example: 130.0,
+        description: 'Potencia del motor en HP',
+      },
+      weight_kg: {
+        type: 'number',
+        format: 'float',
+        example: 5200.0,
+        description: 'Peso del tractor en kg',
+      },
+      soil_type: {
+        type: 'string',
+        example: 'clay',
+        description: 'Tipo de suelo (clay, loam, sandy, rocky, firm, soft)',
+      },
+      altitude_m: {
+        type: 'number',
+        format: 'float',
+        example: 2500.0,
+        description: 'Altitud en metros sobre el nivel del mar',
+      },
+      ambient_temperature_c: {
+        type: 'number',
+        format: 'float',
+        example: 25.0,
+        description: 'Temperatura ambiente en grados Celsius',
+      },
+      slope_percent: {
+        type: 'number',
+        format: 'float',
+        example: 15.0,
+        description: 'Pendiente del terreno en porcentaje',
+      },
+      slippage_percent: {
+        type: 'number',
+        format: 'float',
+        example: 10.0,
+        description: 'Porcentaje de deslizamiento',
+      },
+      has_turbo: {
+        type: 'boolean',
+        example: false,
+        description: 'Si el tractor tiene turbo, se ignora la perdida por altitud y temperatura',
+      },
+      working_speed_kmh: {
+        type: 'number',
+        format: 'float',
+        example: 7.0,
+        default: 7,
+        description: 'Velocidad de trabajo en km/h (default: 7)',
+      },
+      carried_objects_weight_kg: {
+        type: 'number',
+        format: 'float',
+        example: 0,
+        default: 0,
+        description: 'Peso de objetos transportados en kg (default: 0)',
+      },
+    },
+  },
+
+  DirectMinimumPowerRequest: {
+    type: 'object',
+    required: ['power_requirement_hp', 'soil_type', 'slope_percentage'],
+    properties: {
+      power_requirement_hp: {
+        type: 'number',
+        format: 'float',
+        example: 85.0,
+        description: 'Potencia requerida por el implemento en HP',
+      },
+      soil_type: {
+        type: 'string',
+        example: 'clay',
+        description: 'Tipo de suelo (clay, loam, sandy, rocky, firm, soft)',
+      },
+      slope_percentage: {
+        type: 'number',
+        format: 'float',
+        example: 15.0,
+        description: 'Pendiente del terreno en porcentaje',
+      },
+      working_depth_m: {
+        type: 'number',
+        format: 'float',
+        example: 0.25,
+        default: 0.25,
+        description: 'Profundidad de trabajo en metros (default: 0.25, max: 1.0)',
+      },
+    },
+  },
+
   PowerLossResponse: {
     type: 'object',
     properties: {
