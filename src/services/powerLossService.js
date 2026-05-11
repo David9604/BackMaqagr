@@ -80,20 +80,30 @@ export const kmhToMs = (speedKmh) => {
 /**
  * Calcula la pérdida de potencia por altitud
  * Descuenta 1% por cada 300m sobre el nivel del mar
- * 
+ * Solo aplica para tractores aspirados (sin turbo).
+ * Tractores turboalimentados compensan la pérdida de densidad del aire.
+ *
  * @param {number} enginePower - Potencia del motor en HP
  * @param {number} altitudeMeters - Altitud sobre nivel del mar en metros
+ * @param {boolean} hasTurbo - Si el tractor tiene turbocompresor
  * @returns {number} Potencia perdida por altitud en HP
- * 
+ *
  * @example
- * / A 1500m de altitud con motor de 100 HP
- * calculateAltitudeLoss(100, 1500) // -> 5 HP (5% de pérdida)
+ * // A 1500m de altitud con motor de 100 HP (aspirado)
+ * calculateAltitudeLoss(100, 1500, false) // -> 5 HP (5% de pérdida)
+ * // Con turbo: sin pérdida
+ * calculateAltitudeLoss(100, 1500, true) // -> 0 HP
  */
-export const calculateAltitudeLoss = (enginePower, altitudeMeters) => {
+export const calculateAltitudeLoss = (enginePower, altitudeMeters, hasTurbo = false) => {
+  // Tractores turboalimentados compensan la pérdida de densidad del aire
+  if (hasTurbo) {
+    return 0;
+  }
+
   if (altitudeMeters <= CONSTANTS.BASE_ALTITUDE_M) {
     return 0;
   }
-  
+
   const lossPercent = (altitudeMeters / 300) * CONSTANTS.ALTITUDE_LOSS_PER_300M;
   return enginePower * (lossPercent / 100);
 };
@@ -101,20 +111,30 @@ export const calculateAltitudeLoss = (enginePower, altitudeMeters) => {
 /**
  * Calcula la pérdida de potencia por temperatura
  * Descuenta 1% por cada 5°C sobre 15°C
- * 
+ * Solo aplica para tractores aspirados (sin turbo).
+ * Tractores turboalimentados compensan la menor densidad del aire caliente.
+ *
  * @param {number} enginePower - Potencia del motor en HP
  * @param {number} temperatureC - Temperatura ambiente en °C
+ * @param {boolean} hasTurbo - Si el tractor tiene turbocompresor
  * @returns {number} Potencia perdida por temperatura en HP
- * 
+ *
  * @example
- * / A 35°C con motor de 100 HP
- * calculateTemperatureLoss(100, 35) // -> 4 HP (4% de pérdida por 20°C sobre base)
+ * // A 35°C con motor de 100 HP (aspirado)
+ * calculateTemperatureLoss(100, 35, false) // -> 4 HP (4% de pérdida por 20°C sobre base)
+ * // Con turbo: sin pérdida
+ * calculateTemperatureLoss(100, 35, true) // -> 0 HP
  */
-export const calculateTemperatureLoss = (enginePower, temperatureC) => {
+export const calculateTemperatureLoss = (enginePower, temperatureC, hasTurbo = false) => {
+  // Tractores turboalimentados compensan la menor densidad del aire caliente
+  if (hasTurbo) {
+    return 0;
+  }
+
   if (temperatureC <= CONSTANTS.BASE_TEMPERATURE_C) {
     return 0;
   }
-  
+
   const tempDiff = temperatureC - CONSTANTS.BASE_TEMPERATURE_C;
   const lossPercent = (tempDiff / 5) * CONSTANTS.TEMP_LOSS_PER_5C;
   return enginePower * (lossPercent / 100);
@@ -254,7 +274,7 @@ export const calculateSlippageLossHP = (powerAvailable, slippagePercent) => {
 
 /**
  * Calcula todas las pérdidas de potencia y retorna el desglose completo
- * 
+ *
  * @param {Object} params - Parámetros de entrada
  * @param {number} params.enginePower - Potencia nominal del motor en HP
  * @param {number} params.altitudeMeters - Altitud sobre nivel del mar en metros
@@ -265,7 +285,8 @@ export const calculateSlippageLossHP = (powerAvailable, slippagePercent) => {
  * @param {number} params.speedKmh - Velocidad de desplazamiento en km/h
  * @param {number} params.slippagePercent - Porcentaje de patinaje
  * @param {number} [params.transmissionLossFactor=0.13] - Factor de pérdida de transmisión
- * 
+ * @param {boolean} [params.hasTurbo=false] - Si el tractor tiene turbocompresor
+ *
  * @returns {Object} Objeto con desglose de pérdidas y potencia neta final
  * @returns {number} returns.grossPower - Potencia bruta del motor (HP)
  * @returns {Object} returns.losses - Desglose de pérdidas
@@ -278,7 +299,8 @@ export const calculateSlippageLossHP = (powerAvailable, slippagePercent) => {
  * @returns {number} returns.losses.total - Total de pérdidas (HP)
  * @returns {number} returns.netPower - Potencia neta disponible para trabajo (HP)
  * @returns {number} returns.efficiency - Eficiencia total (%)
- * 
+ * @returns {boolean} returns.hasTurbo - Si el tractor tiene turbo
+ *
  * @example
  * const result = calculateTotalLoss({
  *   enginePower: 120,
@@ -288,7 +310,8 @@ export const calculateSlippageLossHP = (powerAvailable, slippagePercent) => {
  *   soilCn: 45,
  *   slopePercent: 12,
  *   speedKmh: 7,
- *   slippagePercent: 10
+ *   slippagePercent: 10,
+ *   hasTurbo: false  // Tractor aspirado: pérdidas atmosféricas SÍ aplican
  * });
  */
 export const calculateTotalLoss = ({
@@ -301,10 +324,12 @@ export const calculateTotalLoss = ({
   speedKmh,
   slippagePercent,
   transmissionLossFactor = CONSTANTS.DEFAULT_TRANSMISSION_LOSS,
+  hasTurbo = false,
 }) => {
-  // 1. Pérdidas atmosféricas (sobre potencia bruta)
-  const altitudeLoss = calculateAltitudeLoss(enginePower, altitudeMeters);
-  const temperatureLoss = calculateTemperatureLoss(enginePower, temperatureC);
+  // 1. Pérdidas atmosféricas (solo para tractores aspirados — sin turbo)
+  // Según Chaparro: altitud y temperatura "solo para tractores aspirados"
+  const altitudeLoss = calculateAltitudeLoss(enginePower, altitudeMeters, hasTurbo);
+  const temperatureLoss = calculateTemperatureLoss(enginePower, temperatureC, hasTurbo);
   
   // Potencia después de pérdidas atmosféricas
   const powerAfterAtmospheric = enginePower - altitudeLoss - temperatureLoss;
@@ -354,6 +379,7 @@ export const calculateTotalLoss = ({
   
   return {
     grossPower: enginePower,
+    hasTurbo,
     losses: {
       altitude: parseFloat(altitudeLoss.toFixed(2)),
       temperature: parseFloat(temperatureLoss.toFixed(2)),

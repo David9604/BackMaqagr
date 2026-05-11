@@ -250,16 +250,17 @@ describe('calculationController', () => {
 
       await callWrappedHandler(calculatePowerLoss, req, res);
 
-      expect(mockCalculateTotalLoss).toHaveBeenCalledWith({
-        enginePower: 130,
-        altitudeMeters: 1500,
-        temperatureC: 18,
-        totalWeightKg: 5500,
-        soilCn: 45,
-        slopePercent: 8,
-        speedKmh: 7,
-        slippagePercent: 12,
-      });
+        expect(mockCalculateTotalLoss).toHaveBeenCalledWith({
+          enginePower: 130,
+          altitudeMeters: 1500,
+          temperatureC: 18,
+          totalWeightKg: 5500,
+          soilCn: 45,
+          slopePercent: 8,
+          speedKmh: 7,
+          slippagePercent: 12,
+          hasTurbo: false,
+        });
       expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
       expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
       expect(mockLoggerInfo).toHaveBeenCalledWith('Power calculation completed', {

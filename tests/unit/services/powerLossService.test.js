@@ -33,6 +33,19 @@ describe("powerLossService", () => {
       expect(calculateAltitudeLoss(100, 0)).toBe(0);
       expect(calculateAltitudeLoss(100, -50)).toBe(0);
     });
+
+    test("retorna 0 si el tractor tiene turbo (altitud no afecta)", () => {
+      expect(calculateAltitudeLoss(100, 1500, true)).toBe(0);
+      expect(calculateAltitudeLoss(100, 3000, true)).toBe(0);
+    });
+
+    test("retorna pérdida si el tractor es aspirado (hasTurbo = false)", () => {
+      expect(calculateAltitudeLoss(100, 1500, false)).toBeCloseTo(5.0);
+    });
+
+    test("retorna pérdida si hasTurbo no se pasa (default aspirado)", () => {
+      expect(calculateAltitudeLoss(100, 1500)).toBeCloseTo(5.0);
+    });
   });
 
   describe("calculateTemperatureLoss", () => {
@@ -45,6 +58,19 @@ describe("powerLossService", () => {
     test("retorna 0 si temperatura es <= 15°C", () => {
       expect(calculateTemperatureLoss(100, 15)).toBe(0);
       expect(calculateTemperatureLoss(100, 10)).toBe(0);
+    });
+
+    test("retorna 0 si el tractor tiene turbo (temperatura no afecta)", () => {
+      expect(calculateTemperatureLoss(100, 35, true)).toBe(0);
+      expect(calculateTemperatureLoss(100, 45, true)).toBe(0);
+    });
+
+    test("retorna pérdida si el tractor es aspirado (hasTurbo = false)", () => {
+      expect(calculateTemperatureLoss(100, 35, false)).toBeCloseTo(4.0);
+    });
+
+    test("retorna pérdida si hasTurbo no se pasa (default aspirado)", () => {
+      expect(calculateTemperatureLoss(100, 35)).toBeCloseTo(4.0);
     });
   });
 
@@ -145,6 +171,59 @@ describe("powerLossService", () => {
       });
 
       expect(result.netPower).toBe(0);
+    });
+
+    test("con turbo: no aplica pérdidas atmosféricas", () => {
+      const result = calculateTotalLoss({
+        enginePower: 120,
+        altitudeMeters: 1500,
+        temperatureC: 30,
+        totalWeightKg: 5000,
+        soilCn: 50,
+        slopePercent: 10,
+        speedKmh: 6,
+        slippagePercent: 10,
+        hasTurbo: true,
+      });
+
+      expect(result.losses.altitude).toBe(0);
+      expect(result.losses.temperature).toBe(0);
+      expect(result.hasTurbo).toBe(true);
+    });
+
+    test("con turbo: netPower es mayor que sin turbo en las mismas condiciones", () => {
+      const baseParams = {
+        enginePower: 120,
+        altitudeMeters: 1500,
+        temperatureC: 30,
+        totalWeightKg: 5000,
+        soilCn: 50,
+        slopePercent: 10,
+        speedKmh: 6,
+        slippagePercent: 10,
+      };
+
+      const withTurbo = calculateTotalLoss({ ...baseParams, hasTurbo: true });
+      const withoutTurbo = calculateTotalLoss({ ...baseParams, hasTurbo: false });
+
+      expect(withTurbo.netPower).toBeGreaterThan(withoutTurbo.netPower);
+    });
+
+    test("sin turbo: aplica pérdidas atmosféricas", () => {
+      const result = calculateTotalLoss({
+        enginePower: 120,
+        altitudeMeters: 1500,
+        temperatureC: 30,
+        totalWeightKg: 5000,
+        soilCn: 50,
+        slopePercent: 10,
+        speedKmh: 6,
+        slippagePercent: 10,
+        hasTurbo: false,
+      });
+
+      expect(result.losses.altitude).toBeGreaterThan(0);
+      expect(result.losses.temperature).toBeGreaterThan(0);
     });
   });
 

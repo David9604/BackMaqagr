@@ -36,14 +36,15 @@ export const calculatePowerLoss = asyncHandler(async (req, res) => {
       });
     }
 
-    // 1. Extracción de inputs
-    const { 
-      tractor_id, 
-      terrain_id, 
-      working_speed_kmh, 
-      carried_objects_weight_kg = 0,
-      slippage_percent = 10,  // Default 10% si no se provee
-    } = req.body;
+  // 1. Extracción de inputs
+  const {
+    tractor_id,
+    terrain_id,
+    working_speed_kmh,
+    carried_objects_weight_kg = 0,
+    slippage_percent = 10, // Default 10% si no se provee
+    has_turbo, // Opcional: puede venir del frontend (flujo "Tengo Tractor" con datos manuales)
+  } = req.body;
 
     // Validación básica de campos requeridos
     if (!tractor_id || !terrain_id || working_speed_kmh === undefined) {
@@ -68,21 +69,30 @@ export const calculatePowerLoss = asyncHandler(async (req, res) => {
       return res.status(404).json({ success: false, message: 'Terreno no encontrado' });
     }
 
-    // 4. Preparación de parámetros para el Servicio de Cálculo
-    const totalWeight = parseFloat(tractor.weight_kg) + parseFloat(carried_objects_weight_kg);
-    const soilCn = getSoilCn(terrain.soil_type);
-    
-    // Construir objeto de parámetros
-    const calculationParams = {
-      enginePower: parseFloat(tractor.engine_power_hp),
-      altitudeMeters: parseFloat(terrain.altitude_meters),
-      temperatureC: parseFloat(terrain.temperature_celsius || 15), // Default 15°C si null
-      totalWeightKg: totalWeight,
-      soilCn: soilCn,
-      slopePercent: parseFloat(terrain.slope_percentage),
-      speedKmh: parseFloat(working_speed_kmh),
-      slippagePercent: parseFloat(slippage_percent)
-    };
+  // 4. Preparación de parámetros para el Servicio de Cálculo
+  const totalWeight = parseFloat(tractor.weight_kg) + parseFloat(carried_objects_weight_kg);
+  const soilCn = getSoilCn(terrain.soil_type);
+
+  // Determinar si el tractor tiene turbo
+  // Prioridad: 1) valor explícito del frontend (has_turbo en body), 2) campo de la BD
+  // En la BD puede venir como 'tiene turbo' enum('si','no') o 'turbo_aspirado' VARCHAR
+  const turboValue = has_turbo !== undefined
+    ? has_turbo
+    : (tractor.tiene_turbo || tractor.turbo_aspirado || tractor.turbo || '');
+  const hasTurbo = String(turboValue).toLowerCase() === 'si' || String(turboValue).toLowerCase() === 'sí' || String(turboValue).toLowerCase() === 'true' || turboValue === true;
+
+  // Construir objeto de parámetros
+  const calculationParams = {
+    enginePower: parseFloat(tractor.engine_power_hp),
+    altitudeMeters: parseFloat(terrain.altitude_meters),
+    temperatureC: parseFloat(terrain.temperature_celsius || 15), // Default 15°C si null
+    totalWeightKg: totalWeight,
+    soilCn: soilCn,
+    slopePercent: parseFloat(terrain.slope_percentage),
+    speedKmh: parseFloat(working_speed_kmh),
+    slippagePercent: parseFloat(slippage_percent),
+    hasTurbo, // Según Chaparro: altitud y temperatura solo para tractores aspirados
+  };
 
     // Ejecutar lógica de negocio pura (Cálculo)
     const results = calculateTotalLoss(calculationParams);
@@ -159,14 +169,14 @@ export const calculatePowerLoss = asyncHandler(async (req, res) => {
       totalLoss:        results.losses.total,
     });
 
-    // 6. Enviar Respuesta Exitosa
-    res.status(200).json({
-      success: true,
-      message: 'Cálculo realizado con éxito',
-      data: {
-        queryId,
-        tractor: { brand: tractor.brand, model: tractor.model },
-        terrain: { name: terrain.name, soil_type: terrain.soil_type },
+  // 6. Enviar Respuesta Exitosa
+  res.status(200).json({
+    success: true,
+    message: 'Cálculo realizado con éxito',
+    data: {
+      queryId,
+      tractor: { brand: tractor.brand, model: tractor.model, hasTurbo },
+      terrain: { name: terrain.name, soil_type: terrain.soil_type },
         losses: {
           slope_loss_hp: results.losses.slope,
           altitude_loss_hp: results.losses.altitude,
@@ -187,6 +197,126 @@ export const calculatePowerLoss = asyncHandler(async (req, res) => {
     // Liberar cliente al pool
     client.release();
   }
+});
+
+/**
+ * Controlador para calcular pérdidas de potencia con datos manuales
+ * (Flujo "Tengo Tractor" — sin lookups de DB)
+ * No requiere tractor_id ni terrain_id; acepta datos crudos del frontend.
+ * @route POST /api/calculations/direct-power-loss
+ */
+export const calculateDirectPowerLoss = asyncHandler(async (req, res) => {
+  const {
+    engine_power_hp,
+    weight_kg,
+    soil_type,
+    altitude_m,
+    ambient_temperature_c,
+    slope_percent,
+    slippage_percent,
+    has_turbo,
+    working_speed_kmh = 7,
+    carried_objects_weight_kg = 0,
+  } = req.body;
+
+  const user_id = req.user?.user_id || null;
+
+  // Calcular parámetros desde datos crudos
+  const totalWeightKg = weight_kg + carried_objects_weight_kg;
+  const soilCn = getSoilCn(soil_type);
+
+  const calculationParams = {
+    enginePower: engine_power_hp,
+    altitudeMeters: altitude_m,
+    temperatureC: ambient_temperature_c,
+    totalWeightKg,
+    soilCn,
+    slopePercent: slope_percent,
+    speedKmh: working_speed_kmh,
+    slippagePercent: slippage_percent,
+    hasTurbo: has_turbo,
+  };
+
+  const results = calculateTotalLoss(calculationParams);
+
+  // Intentar persistir (non-blocking — el cálculo ya se hizo)
+  // Solo persistir si hay usuario autenticado
+  let queryId = null;
+  if (user_id) {
+    try {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const insertQuerySql = `
+        INSERT INTO query (
+          user_id, terrain_id, tractor_id, working_speed_kmh,
+          carried_objects_weight_kg, query_type, status
+        )
+        VALUES ($1, NULL, NULL, $2, $3, 'direct_power_loss', 'completed')
+        RETURNING query_id
+      `;
+      const queryResult = await client.query(insertQuerySql, [
+        user_id, working_speed_kmh, carried_objects_weight_kg
+      ]);
+      queryId = queryResult.rows[0].query_id;
+
+      const { slope: slopeLoss, altitude: altLoss, rollingResistance: rollLoss, slippage: slipLoss, total: totalLoss } = results.losses;
+
+      const insertLossSql = `
+        INSERT INTO power_loss (
+          query_id, slope_loss_hp, altitude_loss_hp,
+          rolling_resistance_loss_hp, slippage_loss_hp,
+          total_loss_hp, available_power_hp, net_power_hp, efficiency_percentage
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `;
+      await client.query(insertLossSql, [
+        queryId, slopeLoss, altLoss, rollLoss, slipLoss,
+        totalLoss, results.grossPower, results.netPower, results.efficiency
+      ]);
+
+      await client.query('COMMIT');
+    } catch (dbError) {
+      await client.query('ROLLBACK');
+      logger.warn('Direct power loss persistence failed', { error: dbError.message });
+    } finally {
+      client.release();
+    }
+    } catch (poolError) {
+      logger.warn('Direct power loss DB connection failed', { error: poolError.message });
+    }
+  } else {
+    logger.info('Direct power calculation skipped persistence (no authenticated user)');
+  }
+
+  logger.info('Direct power calculation completed', {
+    queryId,
+    userId: user_id,
+    netPower: results.netPower,
+    efficiency: results.efficiency,
+    hasTurbo: has_turbo,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Cálculo directo realizado con éxito',
+    data: {
+      queryId,
+      tractor: { brand: 'Manual', model: 'Input', hasTurbo: has_turbo },
+      terrain: { name: 'Terreno ingresado', soil_type },
+      losses: {
+        slope_loss_hp: results.losses.slope,
+        altitude_loss_hp: results.losses.altitude,
+        rolling_resistance_loss_hp: results.losses.rollingResistance,
+        slippage_loss_hp: results.losses.slippage,
+        total_loss_hp: results.losses.total,
+      },
+      net_power_hp: results.netPower,
+      engine_power_hp: results.grossPower,
+      efficiency_percentage: results.efficiency,
+    },
+  });
 });
 
 /**

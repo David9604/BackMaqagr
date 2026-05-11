@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { calculatePowerLoss, calculateMinimumPower, getCalculationHistory } from '../controllers/calculationController.js';
-import { validatePowerLossRequest, validateImplementRequirement } from '../middleware/calculationValidation.middleware.js';
+import { calculatePowerLoss, calculateMinimumPower, calculateDirectPowerLoss, getCalculationHistory } from '../controllers/calculationController.js';
+import { validatePowerLossRequest, validateImplementRequirement, validateDirectPowerLossRequest } from '../middleware/calculationValidation.middleware.js';
 import { verifyTokenMiddleware } from '../middleware/auth.middleware.js';
 
 const router = Router();
@@ -87,6 +87,48 @@ const router = Router();
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/power-loss', verifyTokenMiddleware, validatePowerLossRequest, calculatePowerLoss);
+
+/**
+ * @swagger
+ * /api/calculations/direct-power-loss:
+ * post:
+ *   summary: Calcular pérdidas de potencia con datos manuales
+ *   description: |
+ *     Flujo "Tengo Tractor" — acepta datos crudos sin IDs de DB.
+ *     No requiere tractor_id ni terrain_id.
+ *   tags: [Calculations]
+ * requestBody:
+ *     required: true
+ *     content:
+ *       application/json:
+ *         schema:
+ *           type: object
+ *           required: [engine_power_hp, weight_kg, soil_type, altitude_m, ambient_temperature_c, slope_percent, slippage_percent]
+ *           properties:
+ *             engine_power_hp:
+ *               type: number
+ *             weight_kg:
+ *               type: number
+ *             soil_type:
+ *               type: string
+ *             altitude_m:
+ *               type: number
+ *             ambient_temperature_c:
+ *               type: number
+ *             slope_percent:
+ *               type: number
+ *             slippage_percent:
+ *               type: number
+ *             has_turbo:
+ *               type: boolean
+ *             working_speed_kmh:
+ *               type: number
+ *               default: 7
+ *             carried_objects_weight_kg:
+ *               type: number
+ *               default: 0
+ */
+router.post('/direct-power-loss', validateDirectPowerLossRequest, calculateDirectPowerLoss);
 
 /**
  * @swagger
