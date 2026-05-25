@@ -114,18 +114,46 @@ En forma discreta (paso mensual):
 - UPer(t+1) = UPer(t) + TAD(t)
 
 Flujos:
-- TI = MP * (a1*Difusión + a2*ReferenciaSector)
-- TA = UI * (b1*CalidadDocumentacion + b2*Disponibilidad + b3*ValorFuncional - b4*Competencia)
-- TP = UA * (c1*Latencia + c2*Incidentes + c3*FaltaMejoras)
-- TR = UP * (d1*Mejoras + d2*Soporte)
-- TAD = UP * (e1*TiempoEnPausa + e2*Competencia + e3*BajoValorPercibido)
-- TD = UI * f1 * (Competencia)
+- TI = MP * clip(0, 1, a1*Difusión + a2*ReferenciaSector)
+- TA = UI * clip(0, 1, b1*CalidadDocumentacion + b2*Disponibilidad + b3*ValorFuncional - b4*Competencia)
+- TP = UA * clip(0, 1, c1*Latencia + c2*Incidentes + c3*FaltaMejoras)
+- TR = UP * clip(0, 1, d1*Mejoras + d2*Soporte)
+- TAD = UP * clip(0, 1, e1*TiempoEnPausa + e2*Competencia + e3*BajoValorPercibido)
+- TD = UI * clip(0, 1, f1*Competencia)
+
+Restricciones de realismo del modelo:
+- Todas las variables auxiliares normalizadas en rango [0, 1].
+- Para evitar flujos físicamente imposibles, los términos entre paréntesis se acotan con `clip(0, 1)`.
+- En implementación: `TI <= MP`, `TA <= UI`, `TP <= UA`, `TR <= UP`, `TAD <= UP`, `TD <= UI`.
+
+Definición operativa de parámetros (rangos sugeridos):
+- a1, a2: coeficientes de captación (0 a 1).
+- b1, b2, b3, b4: pesos de activación por calidad técnica y competencia (0 a 1).
+- c1, c2, c3: pesos de pausa por fricción operativa (0 a 1).
+- d1, d2: pesos de reactivación por mejora y soporte (0 a 1).
+- e1, e2, e3: pesos de abandono por riesgo acumulado (0 a 1).
+- f1: sensibilidad de desinterés ante competencia (0 a 1).
+
+Criterios de medición de variables auxiliares (normalizadas 0 a 1):
+- Difusión: alcance relativo de acciones de comunicación técnica.
+- ReferenciaSector: proporción de nuevos interesados por recomendación de usuarios activos.
+- CalidadDocumentacion: cobertura y claridad de guías de integración.
+- Disponibilidad: porcentaje de uptime normalizado.
+- ValorFuncional: percepción de utilidad de módulos de cálculos y recomendaciones.
+- Competencia: presión relativa de alternativas del mercado.
+- Latencia: penalización normalizada por tiempos de respuesta.
+- Incidentes: frecuencia relativa de errores críticos.
+- FaltaMejoras: brecha entre necesidades reportadas y mejoras entregadas.
+- Mejoras: intensidad de releases funcionales en el periodo.
+- Soporte: efectividad de atención y resolución.
+- TiempoEnPausa: permanencia promedio en estado de pausa.
+- BajoValorPercibido: pérdida de utilidad percibida por el usuario.
 
 ## 6. Configuración del Tiempo del Modelo
 - Horizonte de simulación: 36 meses.
 - Paso temporal: 1 mes.
 - Condiciones iniciales sugeridas:
-  - MP = 10.000 organizaciones/usuarios objetivo.
+  - MP = 10000 organizaciones/usuarios objetivo.
   - UI = 500.
   - UA = 120.
   - UP = 30.
@@ -187,7 +215,11 @@ Mide deterioro estructural de adopción:
 ## 9. Análisis de Sensibilización de los Escenarios
 
 ### 9.1. Impacto de la Falta de Evolución Funcional
-En BackMaqagr, se interpreta como baja evolución funcional (nuevos casos de uso, ajustes de precisión, mejoras de endpoints). Aumenta TP y TAD de forma significativa.
+En BackMaqagr, se interpreta como baja evolución funcional (nuevos casos de uso, ajustes de precisión y mejoras de endpoints).  
+Como **supuesto hipotético inicial de calibración** (a validar con datos históricos), cuando `FaltaMejoras` supera 0.6 (escala 0 a 1), puede elevar TP entre 15% y 30% y TAD entre 10% y 20% frente al escenario intermedio.  
+Guía para ubicar el valor dentro del rango:
+- `FaltaMejoras` entre 0.60 y 0.75 -> impacto bajo del rango (TP +15% a +22%, TAD +10% a +15%).
+- `FaltaMejoras` entre 0.76 y 1.00 -> impacto alto del rango (TP +23% a +30%, TAD +16% a +20%).
 
 ### 9.2. Impacto de Lanzamientos y Mejoras Funcionales
 Para el proyecto equivale a releases funcionales, mejoras de documentación, nuevas capacidades de cálculo y optimizaciones. Incrementa TR y fortalece retención.
